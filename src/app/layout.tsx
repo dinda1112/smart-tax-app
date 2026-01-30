@@ -1,21 +1,10 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
 import { ThemeProvider } from "@/lib/theme-context";
 import { FontSizeProvider } from "@/lib/font-size-context";
 import { LanguageProvider } from "@/lib/language-context";
 import { MobileUiGuards } from "@/components/MobileUiGuards";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -50,9 +39,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className="font-sans antialiased">
         <ThemeProvider>
           <FontSizeProvider>
             <LanguageProvider>

@@ -83,7 +83,7 @@ export async function searchMsic(query: string, limit = 12): Promise<MsicClass[]
   }
 
   // Map database rows to MsicClass type
-  return (data as MsicCodeRow[]).map(mapDbRowToMsicClass);
+  return ((data as unknown) as MsicCodeRow[]).map(mapDbRowToMsicClass);
 }
 
 /**
@@ -111,7 +111,7 @@ export async function getMsicByCode(code: string): Promise<MsicClass | null> {
     return null;
   }
 
-  return mapDbRowToMsicClass(data as MsicCodeRow);
+  return mapDbRowToMsicClass((data as unknown) as MsicCodeRow);
 }
 
 /**
