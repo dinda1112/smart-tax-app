@@ -1,26 +1,259 @@
 @import "tailwindcss";
 
+/* Light theme (default) */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Backgrounds */
+  --background: #faf8f5; /* Warm near-white (subtle ivory) */
+  --surface: #ffffff; /* White cards */
+  --surface-elevated: #ffffff; /* Elevated surfaces */
+  
+  /* Borders */
+  --border: #e5e3df; /* Subtle border */
+  
+  /* Text */
+  --text-primary: #1a1a1a; /* High contrast primary text */
+  --text-secondary: #5a5753; /* Secondary text */
+  --text-muted: #8a8680; /* Muted text (placeholders, hints) */
+  
+  /* Accent (Wise-like green) */
+  --accent: #00d084; /* Primary accent green */
+  --accent-hover: #00b875;
+  
+  /* Interactive elements */
+  --focus-ring: rgba(0, 208, 132, 0.3); /* Focus ring color */
+  
+  /* Semantic colors */
+  --success: #00d084;
+  --warning: #ff9500;
+  --danger: #ff3b30;
+  
+  /* Badge colors */
+  --badge-success-bg: #ecfdf5; /* Light emerald-50 */
+  --badge-success-border: #a7f3d0; /* Light emerald-200 */
+  --badge-success-text: #059669; /* Light emerald-700 */
+  --badge-neutral-bg: var(--surface-elevated);
+  --badge-neutral-border: var(--border);
+  --badge-neutral-text: var(--text-secondary);
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05), 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  
+  /* Layout spacing */
+  --bottom-nav-height: 76px; /* Nav height (60px) + bottom spacing (16px) */
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --bottom-nav-safe-spacing: calc(var(--bottom-nav-height) + var(--safe-area-bottom) + 8px); /* Extra 8px for breathing room */
+  --bottom-ui-min-spacing: calc(var(--safe-area-bottom) + 8px);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* Dark theme */
+.dark {
+  /* Backgrounds */
+  --background: #1a1a1a; /* Deep charcoal (not pure black) */
+  --surface: #252525; /* Slightly lighter surfaces for cards */
+  --surface-elevated: #2d2d2d; /* Elevated surfaces */
+  
+  /* Borders */
+  --border: #3a3a3a; /* Subtle border in dark mode */
+  
+  /* Text */
+  --text-primary: #f5f5f5; /* High contrast primary text */
+  --text-secondary: #a8a8a8; /* Secondary text */
+  --text-muted: #888888; /* Muted text (placeholders, hints) */
+  
+  /* Accent (same green, slightly adjusted for dark) */
+  --accent: #00d084;
+  --accent-hover: #00e691;
+  
+  /* Interactive elements */
+  --focus-ring: rgba(0, 208, 132, 0.3); /* Focus ring color */
+  
+  /* Semantic colors */
+  --success: #00d084;
+  --warning: #ff9500;
+  --danger: #ff453a;
+  
+  /* Badge colors */
+  --badge-success-bg: rgba(16, 185, 129, 0.15); /* Dark emerald-950/30 */
+  --badge-success-border: rgba(16, 185, 129, 0.3); /* Dark emerald-800 */
+  --badge-success-text: #34d399; /* Dark emerald-400 */
+  --badge-neutral-bg: var(--surface-elevated);
+  --badge-neutral-border: var(--border);
+  --badge-neutral-text: var(--text-secondary);
+  
+  /* Shadows (minimal in dark mode) */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+  
+  /* Layout spacing (same as light mode) */
+  --bottom-nav-height: 76px;
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --bottom-nav-safe-spacing: calc(var(--bottom-nav-height) + var(--safe-area-bottom) + 8px);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Theme-aware shadow utility */
+.theme-shadow {
+  box-shadow: var(--shadow-sm);
+}
+
+.dark .theme-shadow {
+  box-shadow: none;
+}
+
+/* Font size base - Medium (default) matches current design exactly */
+html {
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* Prevent horizontal page drift (mobile) */
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/**
+ * Prevent iOS Safari input auto-zoom:
+ * iOS zooms when a focused form control computes to <16px font-size.
+ *
+ * We keep desktop typography unchanged and respect the FontSizeProvider by using:
+ *   font-size: max(16px, 1rem)
+ * - If root (1rem) is larger than 16px → it stays larger
+ * - If root is smaller (e.g. font-small) → it clamps up to 16px on mobile
+ */
+@media (max-width: 768px) {
+  input:not([type]),
+  input[type="text"],
+  input[type="search"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="password"],
+  input[type="number"],
+  textarea:not([data-no-zoom]),
+  select:not([data-no-zoom]) {
+    font-size: max(16px, 1rem);
   }
 }
 
+/* Font size variants */
+/* Setting root font-size scales all rem-based sizes in Tailwind */
+/* Tailwind v4 uses rem units by default, so changing root font-size scales everything */
+html.font-small {
+  font-size: 14px; /* 87.5% of medium - slightly more compact */
+  line-height: 1.4;
+}
+
+html.font-medium {
+  font-size: 16px; /* 100% - current design (default) */
+  line-height: 1.5;
+}
+
+html.font-large {
+  font-size: 18px; /* 112.5% of medium - improved readability */
+  line-height: 1.6;
+}
+
+html.font-large-plus {
+  font-size: 20px; /* 125% of medium - most prominent */
+  line-height: 1.7;
+}
+
 body {
+  height: 100%;
   background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  color: var(--text-primary);
+  transition: background-color 0.2s ease, color 0.2s ease;
+  /* Ensure body inherits font size from html */
+  font-size: inherit;
+  line-height: inherit;
+}
+
+@keyframes page-fade {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.page-fade {
+  animation: page-fade 200ms ease-out;
+}
+
+.page-slide-in {
+  animation: slide-in 250ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ----------------------------
+   Persistent bottom UI guards
+   - Prevent stacking / overlap on mobile
+   - Account for safe-area
+   - Behave well when keyboard is open
+-----------------------------*/
+
+.bottom-nav {
+  will-change: transform, opacity;
+  transition: transform 180ms ease, opacity 180ms ease;
+}
+
+.sticky-footer-actions,
+.form-sticky-actions {
+  will-change: transform, opacity;
+  transition: transform 180ms ease, opacity 180ms ease;
+}
+
+@media (max-width: 640px) {
+  /* When a page already has a sticky footer, hide the BottomNav to avoid stacked bars.
+     Also reduce reserved bottom spacing so content doesn't get a huge empty gap. */
+  html[data-has-sticky-footer="1"] {
+    --bottom-nav-safe-spacing: var(--bottom-ui-min-spacing);
+  }
+
+  html[data-has-sticky-footer="1"] .bottom-nav {
+    transform: translateY(calc(100% + 24px));
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+@media (max-width: 640px) {
+  html[data-kb-open="1"] .bottom-nav {
+    transform: translateY(calc(100% + 24px));
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  html[data-kb-open="1"] .sticky-footer-actions,
+  html[data-kb-open="1"] .form-sticky-actions {
+    transform: translateY(110%);
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+/* iOS Safari: prevent focus-zoom (font-size must be >= 16px).
+   Target ONLY the MSIC search input inside the bottom sheet. */
+@media (max-width: 768px) {
+  input[data-msic-search="1"] {
+    font-size: 16px;
+    line-height: 20px;
+  }
 }

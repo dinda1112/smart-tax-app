@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Toaster } from "sonner";
 import "./globals.css";
+import { ThemeProvider } from "@/lib/theme-context";
+import { FontSizeProvider } from "@/lib/font-size-context";
+import { LanguageProvider } from "@/lib/language-context";
+import { MobileUiGuards } from "@/components/MobileUiGuards";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,11 +28,49 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+(function() {
+  try {
+    const stored = localStorage.getItem('taxapp_font_size');
+    const validSizes = ['small', 'medium', 'large', 'large-plus'];
+    if (stored && validSizes.includes(stored)) {
+      document.documentElement.classList.add('font-' + stored);
+    } else {
+      document.documentElement.classList.add('font-medium');
+    }
+  } catch (e) {
+    document.documentElement.classList.add('font-medium');
+  }
+})();
+            `,
+          }}
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <ThemeProvider>
+          <FontSizeProvider>
+            <LanguageProvider>
+              <MobileUiGuards />
+              {children}
+              <Toaster 
+                position="top-center" 
+                toastOptions={{
+                  style: {
+                    background: "var(--surface)",
+                    border: "1px solid var(--border)",
+                    color: "var(--text-primary)",
+                  },
+                }}
+              />
+            </LanguageProvider>
+          </FontSizeProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
