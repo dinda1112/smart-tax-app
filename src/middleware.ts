@@ -57,7 +57,8 @@ export async function middleware(request: NextRequest) {
     pathname === "/account" ||
     pathname.startsWith("/account/") ||
     pathname === "/settings" ||
-    pathname.startsWith("/settings/");
+    pathname.startsWith("/settings/") ||
+    pathname.startsWith("/admin/");
 
   // If accessing a protected route without a user, redirect to login
   if (isProtectedRoute && !user) {
