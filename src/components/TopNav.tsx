@@ -20,7 +20,7 @@ export function TopNav() {
 
           <div className="flex items-center gap-2 min-w-0">
             <Link href="/dashboard" className="text-sm font-black tracking-tight text-[var(--text-primary)]">
-              TaxApp
+              SmartTaxApp
             </Link>
 
             <span className="inline-flex items-center rounded-full bg-[var(--surface-elevated)] px-2.5 py-1 text-[11px] font-semibold text-[var(--text-secondary)] border border-[var(--border)]">

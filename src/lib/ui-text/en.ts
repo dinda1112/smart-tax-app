@@ -170,7 +170,7 @@ export const en = {
     emailPlaceholder: "you@example.com",
     login: {
       title: "Welcome back",
-      subtitle: "Sign in to your TaxApp account",
+      subtitle: "Sign in to your SmartTaxApp account",
       signingIn: "Signing in...",
       signIn: "Sign in",
       noAccount: "Don't have an account?",
@@ -179,7 +179,7 @@ export const en = {
     },
     signup: {
       title: "Create account",
-      subtitle: "Sign up to get started with TaxApp",
+      subtitle: "Sign up to get started with SmartTaxApp",
       passwordHint: "Must be at least 6 characters",
       confirmPasswordLabel: "Confirm Password",
       creatingAccount: "Creating account...",
@@ -211,7 +211,7 @@ export const en = {
     },
     settings: {
       title: "Settings",
-      description: "How TaxApp looks and feels.",
+      description: "How SmartTaxApp looks and feels.",
       language: "Language",
       theme: "Theme",
       fontSize: "Font Size",

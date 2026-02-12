@@ -170,7 +170,7 @@ export const ms = {
     emailPlaceholder: "you@example.com",
     login: {
       title: "Selamat kembali",
-      subtitle: "Log masuk ke akaun TaxApp anda",
+      subtitle: "Log masuk ke akaun SmartTaxApp anda",
       signingIn: "Sedang log masuk...",
       signIn: "Log masuk",
       noAccount: "Tiada akaun?",
@@ -179,7 +179,7 @@ export const ms = {
     },
     signup: {
       title: "Cipta akaun",
-      subtitle: "Daftar untuk mula menggunakan TaxApp",
+      subtitle: "Daftar untuk mula menggunakan SmartTaxApp",
       passwordHint: "Mesti sekurang-kurangnya 6 aksara",
       confirmPasswordLabel: "Sahkan kata laluan",
       creatingAccount: "Sedang cipta akaun...",
@@ -211,7 +211,7 @@ export const ms = {
     },
     settings: {
       title: "Tetapan",
-      description: "Bagaimana TaxApp kelihatan dan dirasai.",
+      description: "Bagaimana SmartTaxApp kelihatan dan dirasai.",
       language: "Bahasa",
       theme: "Tema",
       fontSize: "Saiz fon",
