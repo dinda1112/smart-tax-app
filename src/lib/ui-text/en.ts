@@ -149,6 +149,16 @@ export const en = {
       group: "Group",
       class: "Class",
     },
+    itemSearch: {
+      title: "Item (optional)",
+      hint: "Type an item name (e.g. 'keyboard') to find its MSIC automatically.",
+      placeholder: "e.g. keyboard, printer, etc.",
+      noMsic: "This item has no MSIC yet. Please select an industry manually or go one level up.",
+      notFound: "No match for this item. Please try a broader keyword or go one level up.",
+      msicNotFound: "MSIC code not found for this item.",
+      unclassifiedBadge: "Unclassified",
+      addUnclassifiedLink: "Add this as a new unclassified item",
+    },
     invoice: {
       type: "Type",
       sales: "Sales",
@@ -159,6 +169,7 @@ export const en = {
       itemPlaceholder: "Search or select item...",
       checking: "Checking...",
       checkInvoice: "Check invoice",
+      checkTaxPercent: "Check tax % for invoice",
     },
     result: {
       sstRateNotAvailable: "SST rate not available yet.",
@@ -175,7 +186,24 @@ export const en = {
       signIn: "Sign in",
       noAccount: "Don't have an account?",
       signUp: "Sign up",
+      forgotPassword: "Forgot password?",
       unexpectedError: "An unexpected error occurred. Please try again.",
+    },
+    resetPassword: {
+      title: "Reset Password",
+      subtitle: "Enter your email to receive a password reset link",
+      emailHint: "We'll send a reset link to {email}",
+      sending: "Sending...",
+      sendResetLink: "Send reset link",
+      backToLogin: "Back to login",
+      success: {
+        title: "Check your email",
+        message: "If an account exists with this email, you'll receive a password reset link.",
+      },
+      errors: {
+        emailRequired: "Email is required",
+        unexpectedError: "An unexpected error occurred. Please try again.",
+      },
     },
     signup: {
       title: "Create account",

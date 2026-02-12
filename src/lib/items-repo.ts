@@ -8,9 +8,12 @@ function formatSupabaseError(error: unknown) {
 }
 
 export type Item = {
+  id?: string;
   item_key: string;
   name_i18n: Record<LanguageCode, string>;
   tags: string[];
+  msic_code?: string | null;
+  updated_at?: string | null;
 };
 
 /**
@@ -154,9 +157,60 @@ export async function getItemsByMsicCode(
       item_key: item.item_key,
       name_i18n: item.name_i18n || {},
       tags: [], // Not needed for this use case
+      msic_code: item.msic_code,
     })) as Item[];
   } catch (error) {
     console.error("Error in getItemsByMsicCode:", error);
+    return [];
+  }
+}
+
+/**
+ * Search items by query string (item_key or name_i18n)
+ * Returns items with item_key, name_i18n, and msic_code
+ */
+export async function searchItemsByQuery(
+  query: string,
+  lang: LanguageCode = "en",
+  limit = 10
+): Promise<Item[]> {
+  try {
+    const supabase = createClient();
+    
+    if (!query.trim()) {
+      return [];
+    }
+
+    const trimmedQuery = query.trim();
+    
+    // Search by item_key ilike and name_i18n (en/ms) ilike
+    // Using OR conditions: item_key ilike OR name_i18n->>'en' ilike OR name_i18n->>'ms' ilike
+    const { data, error } = await supabase
+      .from("items")
+      .select("id, item_key, name_i18n, tags, msic_code, updated_at")
+      .or(`item_key.ilike.%${trimmedQuery}%,name_i18n->>en.ilike.%${trimmedQuery}%,name_i18n->>ms.ilike.%${trimmedQuery}%`)
+      .limit(limit)
+      .order("item_key");
+
+    if (error) {
+      console.error("Error searching items:", formatSupabaseError(error));
+      return [];
+    }
+
+    if (!data || data.length === 0) {
+      return [];
+    }
+
+    return data.map((item) => ({
+      id: (item as any).id,
+      item_key: (item as any).item_key,
+      name_i18n: (item as any).name_i18n || {},
+      tags: Array.isArray((item as any).tags) ? (item as any).tags : [],
+      msic_code: (item as any).msic_code,
+      updated_at: (item as any).updated_at ?? null,
+    })) as Item[];
+  } catch (error) {
+    console.error("Error in searchItemsByQuery:", error);
     return [];
   }
 }

@@ -149,6 +149,16 @@ export const ms = {
       group: "Kumpulan",
       class: "Kelas",
     },
+    itemSearch: {
+      title: "Item (pilihan)",
+      hint: "Taip nama item (cth. 'papan kekunci') untuk cari MSIC secara automatik.",
+      placeholder: "cth. papan kekunci, pencetak, dll.",
+      noMsic: "Item ini belum ada MSIC. Sila pilih industri secara manual atau naik satu tahap.",
+      notFound: "Tiada padanan untuk item ini. Sila cuba kata kunci yang lebih luas atau naik satu tahap.",
+      msicNotFound: "Kod MSIC tidak ditemui untuk item ini.",
+      unclassifiedBadge: "Tanpa klasifikasi",
+      addUnclassifiedLink: "Tambah ini sebagai item tanpa klasifikasi baharu",
+    },
     invoice: {
       type: "Jenis",
       sales: "Jualan",
@@ -159,6 +169,7 @@ export const ms = {
       itemPlaceholder: "Cari atau pilih item...",
       checking: "Menyemak...",
       checkInvoice: "Semak invois",
+      checkTaxPercent: "Semak % cukai untuk invois",
     },
     result: {
       sstRateNotAvailable: "Kadar SST belum tersedia.",
@@ -175,7 +186,24 @@ export const ms = {
       signIn: "Log masuk",
       noAccount: "Tiada akaun?",
       signUp: "Daftar",
+      forgotPassword: "Lupa kata laluan?",
       unexpectedError: "Ralat tidak dijangka berlaku. Sila cuba lagi.",
+    },
+    resetPassword: {
+      title: "Set Semula Kata Laluan",
+      subtitle: "Masukkan e-mel anda untuk menerima pautan set semula kata laluan",
+      emailHint: "Kami akan hantar pautan set semula ke {email}",
+      sending: "Menghantar...",
+      sendResetLink: "Hantar pautan set semula",
+      backToLogin: "Kembali ke log masuk",
+      success: {
+        title: "Semak e-mel anda",
+        message: "Jika akaun wujud dengan e-mel ini, anda akan menerima pautan set semula kata laluan.",
+      },
+      errors: {
+        emailRequired: "E-mel diperlukan",
+        unexpectedError: "Ralat tidak dijangka berlaku. Sila cuba lagi.",
+      },
     },
     signup: {
       title: "Cipta akaun",

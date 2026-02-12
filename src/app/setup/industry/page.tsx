@@ -12,13 +12,14 @@ import { StickyFooterActions } from "@/components/profile/StickyFooterActions";
 import { MsicPickerSheet } from "@/components/profile/MsicPickerSheet";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
+import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { ChevronDown, ChevronUp, Receipt, CheckCircle2, AlertCircle, Info } from "lucide-react";
 import type { MsicClass, ProfileFormData } from "@/lib/types";
 import { PROFILE_DEFAULTS } from "@/lib/profile-defaults";
 import { loadProfile, saveProfile } from "@/lib/profile-storage";
 import { getMsicByCode } from "@/lib/msic-repo";
-import { getItemsByMsicCode, type Item } from "@/lib/items-repo";
+import { getItemsByMsicCode, searchItemsByQuery, type Item } from "@/lib/items-repo";
 import { getSstRateRPC } from "@/lib/sst-repo";
 import { useLanguage } from "@/lib/language-context";
 import { t } from "@/lib/ui-text/t";
@@ -38,6 +39,16 @@ export default function IndustryMsicPage() {
   const [scopeOpen, setScopeOpen] = useState(false);
   const [selectedMsic, setSelectedMsic] = useState<MsicClass | null>(null);
   const [loadingMsic, setLoadingMsic] = useState(false);
+  
+  // Item search state (for MSIC auto-selection)
+  const [itemSearchQuery, setItemSearchQuery] = useState("");
+  const [itemSearchResults, setItemSearchResults] = useState<Item[]>([]);
+  const [loadingItemSearch, setLoadingItemSearch] = useState(false);
+  const [selectedItemForMsic, setSelectedItemForMsic] = useState<Item | null>(null);
+  const [itemSearchMessage, setItemSearchMessage] = useState<
+    { type: "none" | "no_msic" | "not_found"; text: string } | null
+  >(null);
+  const [itemSearchOpen, setItemSearchOpen] = useState(false);
   
   // Check invoice state
   const [invoiceType, setInvoiceType] = useState<InvoiceType>("");
@@ -119,6 +130,132 @@ export default function IndustryMsicPage() {
   useEffect(() => {
     setCanContinue(values.msicCode.trim().length > 0);
   }, [values.msicCode]);
+
+  // Search items when query changes (debounced)
+  useEffect(() => {
+    if (!itemSearchQuery.trim()) {
+      setItemSearchResults([]);
+      setItemSearchMessage(null);
+      setItemSearchOpen(false);
+      if (!selectedItemForMsic) {
+        setSelectedItemForMsic(null);
+      }
+      return;
+    }
+
+    const timeoutId = setTimeout(async () => {
+      setLoadingItemSearch(true);
+      setItemSearchMessage(null);
+      setItemSearchOpen(true);
+      try {
+        const results = await searchItemsByQuery(itemSearchQuery, language, 10);
+
+        // Dedupe by item_key for suggestions, preferring:
+        // 1) Rows with msic_code present
+        // 2) If tie, most recent updated_at (if available)
+        const byKey = new Map<string, Item>();
+        for (const item of results) {
+          const key = item.item_key;
+          const existing = byKey.get(key);
+          if (!existing) {
+            byKey.set(key, item);
+            continue;
+          }
+
+          const existingHasMsic = !!existing.msic_code;
+          const incomingHasMsic = !!item.msic_code;
+
+          if (!existingHasMsic && incomingHasMsic) {
+            byKey.set(key, item);
+            continue;
+          }
+          if (existingHasMsic && !incomingHasMsic) {
+            continue;
+          }
+
+          const existingUpdated = existing.updated_at ? Date.parse(existing.updated_at) : 0;
+          const incomingUpdated = item.updated_at ? Date.parse(item.updated_at) : 0;
+          if (incomingUpdated > existingUpdated) {
+            byKey.set(key, item);
+          }
+        }
+
+        const deduped = Array.from(byKey.values());
+        setItemSearchResults(deduped);
+
+        if (deduped.length === 0 && itemSearchQuery.trim().length > 2) {
+          setItemSearchMessage({
+            type: "not_found",
+            text: t(language, "setupIndustry.itemSearch.notFound"),
+          });
+        }
+      } catch (error) {
+        console.error("Failed to search items:", error);
+        setItemSearchResults([]);
+      } finally {
+        setLoadingItemSearch(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itemSearchQuery, language]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      const target = event.target as Node;
+      const itemSearchContainer = document.querySelector('[data-item-search-container]');
+      if (itemSearchContainer && !itemSearchContainer.contains(target)) {
+        setItemSearchOpen(false);
+      }
+    }
+    if (itemSearchOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [itemSearchOpen]);
+
+  // Handle item selection for MSIC auto-selection
+  async function handleItemSelectForMsic(item: Item) {
+    setSelectedItemForMsic(item);
+    setItemSearchQuery(item.name_i18n[language] || item.name_i18n.en || item.item_key);
+    setItemSearchResults([]);
+    setItemSearchOpen(false);
+
+    if (item.msic_code) {
+      // Auto-select MSIC
+      try {
+        const msic = await getMsicByCode(item.msic_code);
+        if (msic) {
+          applyMsic(msic);
+          setItemSearchMessage(null);
+          // Scroll to Selected Industry card after a short delay
+          setTimeout(() => {
+            const card = document.querySelector('[data-selected-industry-card]');
+            card?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          }, 100);
+        } else {
+          setItemSearchMessage({
+            type: "not_found",
+            text: t(language, "setupIndustry.itemSearch.msicNotFound"),
+          });
+        }
+      } catch (error) {
+        console.error("Failed to load MSIC:", error);
+        setItemSearchMessage({
+          type: "not_found",
+          text: t(language, "setupIndustry.itemSearch.msicNotFound"),
+        });
+      }
+    } else {
+      // Item has no MSIC
+      setItemSearchMessage({
+        type: "no_msic",
+        text: t(language, "setupIndustry.itemSearch.noMsic"),
+      });
+    }
+  }
 
   // Load items when MSIC code changes
   useEffect(() => {
@@ -294,6 +431,122 @@ export default function IndustryMsicPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-6">
+        {/* Item Search Section (Optional) */}
+        <SectionCard title={t(language, "setupIndustry.itemSearch.title")} required={false}>
+          <div className="space-y-3" data-item-search-container>
+            <p className="text-xs text-[var(--text-secondary)]">
+              {t(language, "setupIndustry.itemSearch.hint")}
+            </p>
+            <div className="relative">
+              <Input
+                value={itemSearchQuery}
+                onChange={(e) => {
+                  setItemSearchQuery(e.target.value);
+                  if (!e.target.value.trim()) {
+                    setSelectedItemForMsic(null);
+                    setItemSearchMessage(null);
+                  }
+                }}
+                onFocus={() => {
+                  if (itemSearchResults.length > 0) {
+                    setItemSearchOpen(true);
+                  }
+                }}
+                placeholder={t(language, "setupIndustry.itemSearch.placeholder")}
+                disabled={loadingItemSearch}
+              />
+              {loadingItemSearch && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--border)] border-t-[var(--accent)]" />
+                </div>
+              )}
+              {itemSearchOpen && itemSearchResults.length > 0 && (
+                <div className="absolute z-50 mt-1 max-h-72 w-full overflow-auto rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-lg">
+                  {itemSearchResults.map((item) => {
+                    const displayName =
+                      item.name_i18n[language] || item.name_i18n.en || item.item_key;
+                    const msNameMs = item.name_i18n.ms && item.name_i18n.ms !== displayName
+                      ? item.name_i18n.ms
+                      : null;
+                    const tags = Array.isArray(item.tags) ? item.tags : [];
+                    const visibleTags = tags.slice(0, 3);
+                    const extraCount = tags.length - visibleTags.length;
+
+                    return (
+                      <button
+                        key={item.id ?? item.item_key}
+                        type="button"
+                        onClick={() => handleItemSelectForMsic(item)}
+                        className="w-full px-4 py-2.5 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--surface-elevated)] transition-colors first:rounded-t-2xl last:rounded-b-2xl"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-semibold break-words">{item.item_key}</span>
+                          <span className="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
+                            {item.msic_code
+                              ? item.msic_code
+                              : t(language, "setupIndustry.itemSearch.unclassifiedBadge")}
+                          </span>
+                        </div>
+                        <div className="mt-1 text-xs text-[var(--text-secondary)] break-words">
+                          {displayName}
+                          {msNameMs && (
+                            <span className="ml-1 text-[var(--text-secondary)]/80">
+                              · {msNameMs}
+                            </span>
+                          )}
+                        </div>
+                        {visibleTags.length > 0 && (
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {visibleTags.map((tag) => (
+                              <span
+                                key={tag}
+                                className="inline-flex items-center rounded-full bg-[var(--surface-elevated)] px-2 py-0.5 text-[10px] font-medium text-[var(--text-secondary)]"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                            {extraCount > 0 && (
+                              <span className="inline-flex items-center rounded-full bg-[var(--surface-elevated)] px-2 py-0.5 text-[10px] font-medium text-[var(--text-secondary)]">
+                                +{extraCount}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            {itemSearchMessage && (
+              <div className={cn(
+                "rounded-xl border p-3 text-xs",
+                itemSearchMessage.type === "no_msic" && "border-[var(--danger)]/30 bg-[var(--danger)]/5",
+                itemSearchMessage.type === "not_found" && "border-[var(--border)]/30 bg-[var(--surface-elevated)]"
+              )}>
+                <p className={cn(
+                  "font-semibold",
+                  itemSearchMessage.type === "no_msic" && "text-[var(--danger)]",
+                  itemSearchMessage.type === "not_found" && "text-[var(--text-secondary)]"
+                )}>
+                  {itemSearchMessage.text}
+                </p>
+                {itemSearchMessage.type === "not_found" && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      window.location.href = "/admin/items-new";
+                    }}
+                    className="mt-2 text-[11px] font-semibold text-[var(--accent)] underline-offset-2 hover:underline"
+                  >
+                    {t(language, "setupIndustry.itemSearch.addUnclassifiedLink")}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </SectionCard>
+
         <SectionCard title={t(language, "setupIndustry.sectionTitle")} required>
           <div data-field="msicCode">
             <MsicPickerSheet
@@ -306,7 +559,7 @@ export default function IndustryMsicPage() {
 
           {/* Selected Industry Summary Card */}
           {values.msicCode && (
-            <div className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] p-4">
+            <div data-selected-industry-card className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] p-4">
               {loadingMsic ? (
                 <div className="text-xs text-[var(--text-secondary)]">{t(language, "setupIndustry.loadingIndustryDetails")}</div>
               ) : selectedMsic ? (
@@ -488,7 +741,7 @@ export default function IndustryMsicPage() {
               )}
             >
               <Receipt className="h-4 w-4" />
-              {loadingSst ? t(language, "setupIndustry.invoice.checking") : t(language, "setupIndustry.invoice.checkInvoice")}
+              {loadingSst ? t(language, "setupIndustry.invoice.checking") : t(language, "setupIndustry.invoice.checkTaxPercent")}
             </Button>
           </div>
         </Card>

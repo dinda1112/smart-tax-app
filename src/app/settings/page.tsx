@@ -2,7 +2,7 @@
 
 import { AppShell } from "@/components/AppShell";
 import Link from "next/link";
-import { ArrowLeft, SlidersHorizontal, PlusSquare } from "lucide-react";
+import { ArrowLeft, SlidersHorizontal } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
 import { t } from "@/lib/ui-text/t";
 
@@ -21,38 +21,25 @@ export default function SettingsPage() {
         </Link>
 
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-[var(--text-primary)]">{t(language, "settings.title")}</h1>
-          <p className="mt-1 text-sm text-[var(--text-secondary)]">{t(language, "settings.subtitle")}</p>
+          <h1 className="text-2xl font-black tracking-tight text-[var(--text-primary)]">
+            {t(language, "settings.title")}
+          </h1>
+          <p className="mt-1 text-sm text-[var(--text-secondary)]">
+            {t(language, "settings.subtitle")}
+          </p>
         </div>
       </div>
 
-      <div className="space-y-4">
-        <Link
-          href="/admin/items-new"
-          className="flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 text-left transition hover:bg-[var(--surface-elevated)]"
-        >
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--accent)]/20 text-[var(--accent)]">
-            <PlusSquare className="h-5 w-5" />
-          </div>
-          <div>
-            <span className="text-sm font-semibold text-[var(--text-primary)]">
-              {t(language, "admin.addUnclassifiedTitle")}
-            </span>
-            <p className="text-xs text-[var(--text-secondary)]">
-              {t(language, "admin.addUnclassifiedSubtitle")}
-            </p>
-          </div>
-        </Link>
-
-        <div className="flex flex-col items-center justify-center rounded-[18px] border border-dashed border-[var(--border)] bg-[var(--surface)]/60 px-6 py-12 text-center transition-colors theme-shadow">
-          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--accent)] text-white">
-            <SlidersHorizontal className="h-6 w-6" />
-          </div>
-          <h2 className="text-base font-extrabold text-[var(--text-primary)]">{t(language, "settings.prototypeOnlyTitle")}</h2>
-          <p className="mt-2 max-w-md text-sm text-[var(--text-secondary)]">
-            {t(language, "settings.prototypeOnlyBody")}
-          </p>
+      <div className="flex flex-col items-center justify-center rounded-[18px] border border-dashed border-[var(--border)] bg-[var(--surface)]/60 px-6 py-12 text-center transition-colors theme-shadow">
+        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--accent)] text-white">
+          <SlidersHorizontal className="h-6 w-6" />
         </div>
+        <h2 className="text-base font-extrabold text-[var(--text-primary)]">
+          {t(language, "settings.prototypeOnlyTitle")}
+        </h2>
+        <p className="mt-2 max-w-md text-sm text-[var(--text-secondary)]">
+          {t(language, "settings.prototypeOnlyBody")}
+        </p>
       </div>
     </AppShell>
   );

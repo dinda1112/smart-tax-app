@@ -99,11 +99,16 @@ export default function LoginPage() {
           </div>
         </form>
 
-        <div className="text-center">
+        <div className="space-y-2 text-center">
           <p className="text-sm text-[var(--text-secondary)]">
             {t(language, "auth.login.noAccount")}{" "}
             <Link href="/auth/signup" className="font-semibold text-[var(--accent)] hover:underline">
               {t(language, "auth.login.signUp")}
+            </Link>
+          </p>
+          <p className="text-sm text-[var(--text-secondary)]">
+            <Link href="/auth/reset-password" className="font-semibold text-[var(--accent)] hover:underline">
+              {t(language, "auth.login.forgotPassword")}
             </Link>
           </p>
         </div>

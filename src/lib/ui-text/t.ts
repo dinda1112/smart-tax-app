@@ -14,9 +14,10 @@ const warnedMissing = new Set<string>();
  * Translation helper function
  * @param language - The language code ("en" | "ms")
  * @param key - The translation key (e.g., "account.title" or "account.settings.language")
+ * @param params - Optional parameters to replace placeholders like {email}
  * @returns The translated string, or English fallback if key is missing
  */
-export function t(language: Language, key: string): string {
+export function t(language: Language, key: string, params?: Record<string, string>): string {
   const dict = dictionaries[language] || dictionaries.en;
   
   // Navigate through nested object using the dot-notation key
@@ -48,5 +49,14 @@ export function t(language: Language, key: string): string {
     }
   }
   
-  return typeof value === "string" ? value : key;
+  let result = typeof value === "string" ? value : key;
+  
+  // Replace placeholders if params provided
+  if (params) {
+    for (const [paramKey, paramValue] of Object.entries(params)) {
+      result = result.replace(new RegExp(`\\{${paramKey}\\}`, "g"), paramValue);
+    }
+  }
+  
+  return result;
 }
