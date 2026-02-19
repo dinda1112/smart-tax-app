@@ -98,6 +98,18 @@ export default function BusinessDetailsPage() {
           />
         </div>
 
+        <div data-field="companyName">
+          <label className="mb-2 block text-xs font-semibold text-[var(--text-secondary)]">
+            {t(language, "setupBusiness.companyNameLabel")}
+            <span className="ml-1 font-normal text-[var(--text-tertiary)]">({t(language, "common.optional")})</span>
+          </label>
+          <Input
+            {...register("companyName")}
+            placeholder={t(language, "setupBusiness.companyNamePlaceholder")}
+            disabled={loading}
+          />
+        </div>
+
         <div data-field="companySize">
           <label className="mb-2 block text-xs font-semibold text-[var(--text-secondary)]">
             {t(language, "setupBusiness.companySizeLabel")}

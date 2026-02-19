@@ -18,22 +18,12 @@ export function TopNav() {
             IL
           </Link>
 
-          <div className="flex items-center gap-2 min-w-0">
-            <Link href="/dashboard" className="text-sm font-black tracking-tight text-[var(--text-primary)]">
-              SmartTaxApp
-            </Link>
-
-            <span className="inline-flex items-center rounded-full bg-[var(--surface-elevated)] px-2.5 py-1 text-[11px] font-semibold text-[var(--text-secondary)] border border-[var(--border)]">
-              {t(language, "common.sarawakOnly")}
-            </span>
-          </div>
+          <Link href="/dashboard" className="text-sm font-black tracking-tight text-[var(--text-primary)]">
+            SmartTaxApp
+          </Link>
         </div>
 
-        <div className="flex items-center gap-1.5 min-w-0">
-          <span className="hidden text-xs font-medium text-[var(--text-secondary)] sm:inline">
-            {t(language, "common.partners")}
-          </span>
-          <div className="h-4 w-px bg-black/10 dark:bg-white/10" />
+        <div className="flex items-center min-w-0">
           <PartnerBadges />
         </div>
       </div>

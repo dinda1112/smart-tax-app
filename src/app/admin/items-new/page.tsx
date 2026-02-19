@@ -10,60 +10,49 @@ import { Card } from "@/components/ui/card";
 import { CheckCircle2 } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
 import { t } from "@/lib/ui-text/t";
-import { createClient } from "@/lib/supabase/browser";
 
 export default function AddUnclassifiedItemPage() {
   const { language } = useLanguage();
-  const [itemKey, setItemKey] = useState("");
-  const [nameEn, setNameEn] = useState("");
-  const [nameMs, setNameMs] = useState("");
-  const [tags, setTags] = useState("");
+  const [itemName, setItemName] = useState("");
+  const [tagsInput, setTagsInput] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState<{ id: string; item_key: string } | null>(null);
+  const [success, setSuccess] = useState(false);
+
+  function parseTags(input: string): string[] {
+    return input
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const trimmedKey = itemKey.trim();
-    const trimmedNameEn = nameEn.trim();
-    if (!trimmedKey || !trimmedNameEn) {
-      toast.error("item_key and name_en are required.");
+    const trimmedName = itemName.trim();
+    if (!trimmedName) {
+      toast.error(t(language, "admin.toastItemNameRequired"));
       return;
     }
     setSubmitting(true);
-    setSuccess(null);
+    setSuccess(false);
     try {
-      const supabase = createClient();
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user) {
-        toast.error("You must be signed in.");
+      const tags = parseTags(tagsInput);
+      const res = await fetch("/api/items/create-unclassified", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: trimmedName,
+          tags,
+          language: language,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Failed to submit.");
         return;
       }
-      const tagsArray = tags.trim()
-        ? tags.split(",").map((s) => s.trim()).filter(Boolean)
-        : [];
-      const name_i18n = {
-        en: trimmedNameEn,
-        ms: nameMs.trim() || trimmedNameEn,
-      };
-      const { data, error } = await supabase
-        .from("items")
-        .insert({
-          item_key: trimmedKey,
-          name_i18n,
-          tags: tagsArray,
-          msic_code: null,
-        })
-        .select("id")
-        .single();
-      if (error) {
-        toast.error(error.message || "Failed to create item.");
-        return;
-      }
-      setSuccess({ id: data.id, item_key: trimmedKey });
-      setItemKey("");
-      setNameEn("");
-      setNameMs("");
-      setTags("");
+      setSuccess(true);
+      setItemName("");
+      setTagsInput("");
       toast.success(t(language, "admin.successTitle"));
     } catch (err) {
       console.error(err);
@@ -99,19 +88,14 @@ export default function AddUnclassifiedItemPage() {
                 {t(language, "admin.successTitle")}
               </h2>
               <p className="text-sm text-[var(--text-secondary)]">
-                ID: <code className="font-mono font-semibold">{success.id}</code>
-                <br />
-                item_key: <code className="font-mono font-semibold">{success.item_key}</code>
-              </p>
-              <p className="text-xs text-[var(--text-secondary)]">
-                {t(language, "admin.successMessage")}
+                {t(language, "admin.successThankYou")}
               </p>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setSuccess(null)}
+                onClick={() => setSuccess(false)}
               >
-                Add another
+                {t(language, "admin.addAnother")}
               </Button>
             </div>
           </Card>
@@ -119,36 +103,13 @@ export default function AddUnclassifiedItemPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <label className="block text-xs font-semibold text-[var(--text-secondary)]">
-                {t(language, "admin.itemKeyLabel")} <span className="text-[var(--danger)]">*</span>
+                {t(language, "admin.itemNameLabel")} <span className="text-[var(--danger)]">*</span>
               </label>
               <Input
-                value={itemKey}
-                onChange={(e) => setItemKey(e.target.value)}
-                placeholder={t(language, "admin.itemKeyPlaceholder")}
+                value={itemName}
+                onChange={(e) => setItemName(e.target.value)}
+                placeholder={t(language, "admin.itemNamePlaceholder")}
                 required
-                disabled={submitting}
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="block text-xs font-semibold text-[var(--text-secondary)]">
-                {t(language, "admin.nameEnLabel")} <span className="text-[var(--danger)]">*</span>
-              </label>
-              <Input
-                value={nameEn}
-                onChange={(e) => setNameEn(e.target.value)}
-                placeholder={t(language, "admin.nameEnPlaceholder")}
-                required
-                disabled={submitting}
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="block text-xs font-semibold text-[var(--text-secondary)]">
-                {t(language, "admin.nameMsLabel")} ({t(language, "common.optional")})
-              </label>
-              <Input
-                value={nameMs}
-                onChange={(e) => setNameMs(e.target.value)}
-                placeholder={t(language, "admin.nameMsPlaceholder")}
                 disabled={submitting}
               />
             </div>
@@ -157,11 +118,14 @@ export default function AddUnclassifiedItemPage() {
                 {t(language, "admin.tagsLabel")} ({t(language, "common.optional")})
               </label>
               <Input
-                value={tags}
-                onChange={(e) => setTags(e.target.value)}
+                value={tagsInput}
+                onChange={(e) => setTagsInput(e.target.value)}
                 placeholder={t(language, "admin.tagsPlaceholder")}
                 disabled={submitting}
               />
+              <p className="text-[11px] text-[var(--text-secondary)]">
+                {t(language, "admin.tagsHint")}
+              </p>
             </div>
             <Button type="submit" disabled={submitting} className="w-full">
               {submitting ? t(language, "admin.submitting") : t(language, "admin.submit")}

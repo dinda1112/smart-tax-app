@@ -2,9 +2,40 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
 /**
+ * Generate a unique item_key for unclassified items.
+ * Format: uncl_{timestamp}_{random} - ensures uniqueness.
+ */
+function generateItemKey(): string {
+  const ts = Date.now();
+  const rand = Math.random().toString(36).slice(2, 10);
+  return `uncl_${ts}_${rand}`;
+}
+
+/**
+ * Parse tags from array or comma-separated string. Trim, ignore empty.
+ */
+function parseTags(raw: unknown): string[] {
+  if (Array.isArray(raw)) {
+    return raw
+      .filter((x): x is string => typeof x === "string")
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+  if (typeof raw === "string") {
+    return raw
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+  return [];
+}
+
+/**
  * POST /api/items/create-unclassified
  * Creates a new row in public.items with msic_code = NULL.
- * Requires authenticated user (TODO: add admin role check if profiles.is_admin exists).
+ * Accepts: name (required), tags (optional array or comma-separated string), language ("en"|"ms").
+ * Auto-generates item_key. Stores name only for current UI language; other language left null.
+ * Requires authenticated user.
  */
 export async function POST(request: Request) {
   try {
@@ -18,45 +49,25 @@ export async function POST(request: Request) {
       );
     }
 
-    // TODO: If profiles table has is_admin/role, check it here for admin-only access.
-
     const body = await request.json();
-    const item_key = typeof body.item_key === "string" ? body.item_key.trim() : "";
-    const name_en = typeof body.name_en === "string" ? body.name_en.trim() : "";
-    const name_ms = typeof body.name_ms === "string" ? body.name_ms.trim() : null;
-    const tagsRaw = body.tags;
+    const name = typeof body.name === "string" ? body.name.trim() : "";
+    const tags = parseTags(body.tags ?? body.notes ?? []);
+    const lang = body.language === "ms" ? "ms" : "en";
 
-    if (!item_key) {
+    if (!name) {
       return NextResponse.json(
-        { error: "item_key is required and must be non-empty." },
-        { status: 400 }
-      );
-    }
-    if (!name_en) {
-      return NextResponse.json(
-        { error: "name_en is required and must be non-empty." },
+        { error: "Item name is required." },
         { status: 400 }
       );
     }
 
-    // Parse tags: comma-separated string or array of strings
-    let tags: string[] = [];
-    if (Array.isArray(tagsRaw)) {
-      tags = tagsRaw
-        .filter((t): t is string => typeof t === "string")
-        .map((t) => t.trim())
-        .filter((t) => t.length > 0);
-    } else if (typeof tagsRaw === "string") {
-      tags = tagsRaw
-        .split(",")
-        .map((t) => t.trim())
-        .filter((t) => t.length > 0);
-    }
+    const item_key = generateItemKey();
 
-    const name_i18n: Record<string, string> = {
-      en: name_en,
-      ms: name_ms || name_en,
-    };
+    // Store name only for current UI language; omit other language
+    const name_i18n: Record<string, string> =
+      lang === "ms"
+        ? { ms: name }
+        : { en: name };
 
     const { data, error } = await supabase
       .from("items")

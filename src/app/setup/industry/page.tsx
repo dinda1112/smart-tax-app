@@ -23,7 +23,7 @@ import { getItemsByMsicCode, searchItemsByQuery, type Item } from "@/lib/items-r
 import { getSstRateRPC } from "@/lib/sst-repo";
 import { useLanguage } from "@/lib/language-context";
 import { t } from "@/lib/ui-text/t";
-import { getLocalizedText } from "@/lib/i18n";
+import { getLocalizedText, getItemDisplayName } from "@/lib/i18n";
 
 type InvoiceType = "sales" | "cost" | "";
 type ResultState =
@@ -219,7 +219,7 @@ export default function IndustryMsicPage() {
   // Handle item selection for MSIC auto-selection
   async function handleItemSelectForMsic(item: Item) {
     setSelectedItemForMsic(item);
-    setItemSearchQuery(item.name_i18n[language] || item.name_i18n.en || item.item_key);
+    setItemSearchQuery(getItemDisplayName(item, language));
     setItemSearchResults([]);
     setItemSearchOpen(false);
 
@@ -346,7 +346,7 @@ export default function IndustryMsicPage() {
   const comboboxOptions = useMemo(() => {
     return items.map((item) => ({
       value: item.item_key,
-      label: item.name_i18n[language] || item.name_i18n.en || item.item_key,
+      label: getItemDisplayName(item, language),
     }));
   }, [items, language]);
 
@@ -453,7 +453,6 @@ export default function IndustryMsicPage() {
                   }
                 }}
                 placeholder={t(language, "setupIndustry.itemSearch.placeholder")}
-                disabled={loadingItemSearch}
               />
               {loadingItemSearch && (
                 <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -463,11 +462,7 @@ export default function IndustryMsicPage() {
               {itemSearchOpen && itemSearchResults.length > 0 && (
                 <div className="absolute z-50 mt-1 max-h-72 w-full overflow-auto rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-lg">
                   {itemSearchResults.map((item) => {
-                    const displayName =
-                      item.name_i18n[language] || item.name_i18n.en || item.item_key;
-                    const msNameMs = item.name_i18n.ms && item.name_i18n.ms !== displayName
-                      ? item.name_i18n.ms
-                      : null;
+                    const displayName = getItemDisplayName(item, language);
                     const tags = Array.isArray(item.tags) ? item.tags : [];
                     const visibleTags = tags.slice(0, 3);
                     const extraCount = tags.length - visibleTags.length;
@@ -489,11 +484,6 @@ export default function IndustryMsicPage() {
                         </div>
                         <div className="mt-1 text-xs text-[var(--text-secondary)] break-words">
                           {displayName}
-                          {msNameMs && (
-                            <span className="ml-1 text-[var(--text-secondary)]/80">
-                              · {msNameMs}
-                            </span>
-                          )}
                         </div>
                         {visibleTags.length > 0 && (
                           <div className="mt-1 flex flex-wrap gap-1">

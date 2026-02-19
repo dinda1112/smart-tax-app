@@ -165,9 +165,34 @@ export async function getItemsByMsicCode(
   }
 }
 
+/** Escape special LIKE characters (%, _, \) in user input. */
+function escapeForLike(s: string): string {
+  return s.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
+}
+
+/** Returns match tier for ranking: 0 = name in current lang, 1 = name in other lang, 2 = item_key only */
+function getMatchTier(
+  item: { item_key: string; name_i18n?: Record<string, string> | null },
+  queryLower: string,
+  currentLang: LanguageCode
+): number {
+  const i18n = item.name_i18n || {};
+  const en = (i18n.en || "").toLowerCase();
+  const ms = (i18n.ms || "").toLowerCase();
+  const keyLower = item.item_key.toLowerCase();
+  const nameMatchCurrent = currentLang === "ms" ? ms.includes(queryLower) : en.includes(queryLower);
+  const nameMatchOther = currentLang === "ms" ? en.includes(queryLower) : ms.includes(queryLower);
+  const keyMatch = keyLower.includes(queryLower);
+  if (nameMatchCurrent) return 0;
+  if (nameMatchOther) return 1;
+  if (keyMatch) return 2;
+  return 3;
+}
+
 /**
- * Search items by query string (item_key or name_i18n)
- * Returns items with item_key, name_i18n, and msic_code
+ * Search items by query (name_i18n.en, name_i18n.ms, item_key fallback).
+ * Case-insensitive partial match on all. Ranked: current-language name first,
+ * then other-language name, then item_key-only. Tax logic unchanged.
  */
 export async function searchItemsByQuery(
   query: string,
@@ -182,14 +207,15 @@ export async function searchItemsByQuery(
     }
 
     const trimmedQuery = query.trim();
-    
-    // Search by item_key ilike and name_i18n (en/ms) ilike
-    // Using OR conditions: item_key ilike OR name_i18n->>'en' ilike OR name_i18n->>'ms' ilike
+    const escapedQuery = escapeForLike(trimmedQuery);
+    const pattern = `%${escapedQuery}%`;
+    const safePattern = `"${pattern.replace(/"/g, '""')}"`;
+
     const { data, error } = await supabase
       .from("items")
       .select("id, item_key, name_i18n, tags, msic_code, updated_at")
-      .or(`item_key.ilike.%${trimmedQuery}%,name_i18n->>en.ilike.%${trimmedQuery}%,name_i18n->>ms.ilike.%${trimmedQuery}%`)
-      .limit(limit)
+      .or(`item_key.ilike.${safePattern},name_i18n->>en.ilike.${safePattern},name_i18n->>ms.ilike.${safePattern}`)
+      .limit(limit * 3)
       .order("item_key");
 
     if (error) {
@@ -197,11 +223,9 @@ export async function searchItemsByQuery(
       return [];
     }
 
-    if (!data || data.length === 0) {
-      return [];
-    }
+    if (!data || data.length === 0) return [];
 
-    return data.map((item) => ({
+    const mapped = data.map((item) => ({
       id: (item as any).id,
       item_key: (item as any).item_key,
       name_i18n: (item as any).name_i18n || {},
@@ -209,6 +233,23 @@ export async function searchItemsByQuery(
       msic_code: (item as any).msic_code,
       updated_at: (item as any).updated_at ?? null,
     })) as Item[];
+
+    const queryLower = trimmedQuery.toLowerCase();
+    const ranked = mapped
+      .map((item) => ({ item, tier: getMatchTier(item, queryLower, lang) }))
+      .sort((a, b) => a.tier - b.tier)
+      .map((x) => x.item);
+
+    const seen = new Set<string>();
+    const deduped: Item[] = [];
+    for (const item of ranked) {
+      if (seen.has(item.item_key)) continue;
+      seen.add(item.item_key);
+      deduped.push(item);
+      if (deduped.length >= limit) break;
+    }
+
+    return deduped;
   } catch (error) {
     console.error("Error in searchItemsByQuery:", error);
     return [];

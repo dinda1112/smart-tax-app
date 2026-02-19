@@ -31,7 +31,6 @@ export function yearsList() {
 export function completionPercent(v: ProfileFormData) {
   const required = [
     !!v.fullName.trim(),
-    !!v.companyName.trim(),
     v.startYear !== "" && Number(v.startYear) >= 1950,
     v.companySize === "micro" || v.companySize === "small" || v.companySize === "medium",
     !!v.msicCode.trim(),

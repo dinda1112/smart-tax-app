@@ -1,7 +1,18 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+// Always public - never require session. pathname.startsWith("/auth/") covers login, signup, callback, reset-password.
+const PUBLIC_AUTH_ROUTES = ["/auth/login", "/auth/signup", "/auth/callback", "/auth/reset-password", "/reset-password", "/forgot-password"];
+
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Skip auth check on public auth routes (no getUser) to avoid AuthSessionMissingError before session exists
+  const isPublicAuthRoute = PUBLIC_AUTH_ROUTES.some((r) => pathname === r || pathname.startsWith(r + "/")) || pathname.startsWith("/auth/");
+  if (isPublicAuthRoute) {
+    return NextResponse.next({ request });
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   });
@@ -43,11 +54,6 @@ export async function middleware(request: NextRequest) {
     console.warn("middleware: supabase.auth.getUser() threw:", err?.message ?? err);
     user = null;
   }
-
-  const { pathname } = request.nextUrl;
-
-  // Public routes that don't require authentication
-  const isPublicRoute = pathname.startsWith("/auth/");
 
   // Protected routes that require authentication
   const isProtectedRoute =

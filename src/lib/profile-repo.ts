@@ -76,7 +76,7 @@ export async function saveProfile(form: ProfileFormData): Promise<string> {
 
   // Only set if non-empty, otherwise DON'T include the column at all
   if (form.fullName?.trim()) payload.full_name = form.fullName.trim();
-  if (form.companyName?.trim()) payload.company_name = form.companyName.trim();
+  payload.company_name = form.companyName?.trim() || null;
   if (form.companySize?.trim()) payload.company_size = form.companySize.trim();
 
   // start_year: only include if provided
