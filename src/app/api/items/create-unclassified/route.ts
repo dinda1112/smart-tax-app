@@ -2,13 +2,14 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
 /**
- * Generate a unique item_key for unclassified items.
- * Format: uncl_{timestamp}_{random} - ensures uniqueness.
+ * Normalize item name to a slug-like key (e.g. "Glue Stick" -> "glue-stick").
  */
-function generateItemKey(): string {
-  const ts = Date.now();
-  const rand = Math.random().toString(36).slice(2, 10);
-  return `uncl_${ts}_${rand}`;
+function normalizeKey(s: string): string {
+  return s
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 /**
@@ -31,10 +32,34 @@ function parseTags(raw: unknown): string[] {
 }
 
 /**
+ * Merge tags, deduped, preserving order of first occurrence.
+ */
+function mergeTags(existing: string[] | null | undefined, incoming: string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const t of existing ?? []) {
+    const k = t.toLowerCase().trim();
+    if (k && !seen.has(k)) {
+      seen.add(k);
+      out.push(t.trim());
+    }
+  }
+  for (const t of incoming) {
+    const k = t.toLowerCase().trim();
+    if (k && !seen.has(k)) {
+      seen.add(k);
+      out.push(t.trim());
+    }
+  }
+  return out;
+}
+
+/**
  * POST /api/items/create-unclassified
- * Creates a new row in public.items with msic_code = NULL.
- * Accepts: name (required), tags (optional array or comma-separated string), language ("en"|"ms").
- * Auto-generates item_key. Stores name only for current UI language; other language left null.
+ * Upserts a row in public.items with msic_code = NULL.
+ * item_key = normalizeKey(name). If an unclassified row exists for that key,
+ * merges name_i18n and tags instead of inserting a duplicate.
+ * Accepts: name (required), tags (optional), language ("en"|"ms").
  * Requires authenticated user.
  */
 export async function POST(request: Request) {
@@ -61,15 +86,64 @@ export async function POST(request: Request) {
       );
     }
 
-    const item_key = generateItemKey();
+    const item_key = normalizeKey(name);
+    if (!item_key) {
+      return NextResponse.json(
+        { error: "Item name must contain at least one letter or number." },
+        { status: 400 }
+      );
+    }
 
-    // Store name only for current UI language; omit other language
     const name_i18n: Record<string, string> =
-      lang === "ms"
-        ? { ms: name }
-        : { en: name };
+      lang === "ms" ? { ms: name } : { en: name };
 
-    const { data, error } = await supabase
+    // Select existing unclassified row by normalized key (unique on item_key_norm where msic_code is null)
+    const { data: existing } = await supabase
+      .from("items")
+      .select("id, name_i18n, tags")
+      .eq("item_key_norm", item_key)
+      .is("msic_code", null)
+      .maybeSingle();
+
+    if (existing) {
+      const merged_name_i18n = {
+        ...(typeof existing.name_i18n === "object" && existing.name_i18n !== null
+          ? (existing.name_i18n as Record<string, string>)
+          : {}),
+        ...name_i18n,
+      };
+      const merged_tags = mergeTags(
+        Array.isArray(existing.tags) ? existing.tags : [],
+        tags
+      );
+
+      const { data: updated, error } = await supabase
+        .from("items")
+        .update({
+          name_i18n: merged_name_i18n,
+          tags: merged_tags,
+        })
+        .eq("id", existing.id)
+        .select("id")
+        .single();
+
+      if (error) {
+        console.error("create-unclassified update error:", error);
+        return NextResponse.json(
+          { error: error.message || "Failed to update item." },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        id: updated?.id,
+        item_key,
+        message: "Item updated. Run export script or wait for Sunday to generate CSV.",
+      });
+    }
+
+    const { data: inserted, error } = await supabase
       .from("items")
       .insert({
         item_key,
@@ -81,6 +155,13 @@ export async function POST(request: Request) {
       .single();
 
     if (error) {
+      // Handle unique constraint violation (e.g. concurrent insert or item_key_norm conflict)
+      if (error.code === "23505") {
+        return NextResponse.json(
+          { error: "An unclassified item with this name already exists." },
+          { status: 409 }
+        );
+      }
       console.error("create-unclassified insert error:", error);
       return NextResponse.json(
         { error: error.message || "Failed to insert item." },
@@ -90,7 +171,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      id: data?.id,
+      id: inserted?.id,
       item_key,
       message: "Item created. Run export script or wait for Sunday to generate CSV.",
     });

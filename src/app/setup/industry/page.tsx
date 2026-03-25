@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -36,14 +36,18 @@ export default function IndustryMsicPage() {
   const router = useRouter();
   const { language } = useLanguage();
   const [canContinue, setCanContinue] = useState(false);
-  const [scopeOpen, setScopeOpen] = useState(false);
+  const [scopeOpen, setScopeOpen] = useState(true);
   const [selectedMsic, setSelectedMsic] = useState<MsicClass | null>(null);
   const [loadingMsic, setLoadingMsic] = useState(false);
   
+  // MSIC source: manual = user chose from picker (don't overwrite with item); auto = from item or cleared
+  const [msicSource, setMsicSource] = useState<"manual" | "auto">("auto");
   // Item search state (for MSIC auto-selection)
+  const skipNextSearchRef = useRef(false);
   const [itemSearchQuery, setItemSearchQuery] = useState("");
   const [itemSearchResults, setItemSearchResults] = useState<Item[]>([]);
   const [loadingItemSearch, setLoadingItemSearch] = useState(false);
+  const [lastSearchedQuery, setLastSearchedQuery] = useState("");
   const [selectedItemForMsic, setSelectedItemForMsic] = useState<Item | null>(null);
   const [itemSearchMessage, setItemSearchMessage] = useState<
     { type: "none" | "no_msic" | "not_found"; text: string } | null
@@ -136,6 +140,7 @@ export default function IndustryMsicPage() {
     if (!itemSearchQuery.trim()) {
       setItemSearchResults([]);
       setItemSearchMessage(null);
+      setLastSearchedQuery("");
       setItemSearchOpen(false);
       if (!selectedItemForMsic) {
         setSelectedItemForMsic(null);
@@ -144,56 +149,23 @@ export default function IndustryMsicPage() {
     }
 
     const timeoutId = setTimeout(async () => {
+      if (skipNextSearchRef.current) {
+        skipNextSearchRef.current = false;
+        return;
+      }
+      const searchedQuery = itemSearchQuery.trim();
       setLoadingItemSearch(true);
       setItemSearchMessage(null);
       setItemSearchOpen(true);
       try {
-        const results = await searchItemsByQuery(itemSearchQuery, language, 10);
-
-        // Dedupe by item_key for suggestions, preferring:
-        // 1) Rows with msic_code present
-        // 2) If tie, most recent updated_at (if available)
-        const byKey = new Map<string, Item>();
-        for (const item of results) {
-          const key = item.item_key;
-          const existing = byKey.get(key);
-          if (!existing) {
-            byKey.set(key, item);
-            continue;
-          }
-
-          const existingHasMsic = !!existing.msic_code;
-          const incomingHasMsic = !!item.msic_code;
-
-          if (!existingHasMsic && incomingHasMsic) {
-            byKey.set(key, item);
-            continue;
-          }
-          if (existingHasMsic && !incomingHasMsic) {
-            continue;
-          }
-
-          const existingUpdated = existing.updated_at ? Date.parse(existing.updated_at) : 0;
-          const incomingUpdated = item.updated_at ? Date.parse(item.updated_at) : 0;
-          if (incomingUpdated > existingUpdated) {
-            byKey.set(key, item);
-          }
-        }
-
-        const deduped = Array.from(byKey.values());
-        setItemSearchResults(deduped);
-
-        if (deduped.length === 0 && itemSearchQuery.trim().length > 2) {
-          setItemSearchMessage({
-            type: "not_found",
-            text: t(language, "setupIndustry.itemSearch.notFound"),
-          });
-        }
+        const results = await searchItemsByQuery(searchedQuery, language, 20);
+        setItemSearchResults(results);
       } catch (error) {
         console.error("Failed to search items:", error);
         setItemSearchResults([]);
       } finally {
         setLoadingItemSearch(false);
+        setLastSearchedQuery(searchedQuery);
       }
     }, 300);
 
@@ -218,19 +190,30 @@ export default function IndustryMsicPage() {
 
   // Handle item selection for MSIC auto-selection
   async function handleItemSelectForMsic(item: Item) {
+    skipNextSearchRef.current = true;
     setSelectedItemForMsic(item);
     setItemSearchQuery(getItemDisplayName(item, language));
     setItemSearchResults([]);
+    setLastSearchedQuery("");
     setItemSearchOpen(false);
 
+    const currentMsicCode = getValues("msicCode")?.trim();
+    const isManualMsic = msicSource === "manual" && !!currentMsicCode;
+
     if (item.msic_code) {
-      // Auto-select MSIC
+      if (isManualMsic) {
+        setItemSearchMessage({
+          type: "not_found",
+          text: t(language, "setupIndustry.itemSearch.msicAlreadySelected"),
+        });
+        return;
+      }
       try {
         const msic = await getMsicByCode(item.msic_code);
         if (msic) {
+          setMsicSource("auto");
           applyMsic(msic);
           setItemSearchMessage(null);
-          // Scroll to Selected Industry card after a short delay
           setTimeout(() => {
             const card = document.querySelector('[data-selected-industry-card]');
             card?.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -249,7 +232,6 @@ export default function IndustryMsicPage() {
         });
       }
     } else {
-      // Item has no MSIC
       setItemSearchMessage({
         type: "no_msic",
         text: t(language, "setupIndustry.itemSearch.noMsic"),
@@ -362,10 +344,11 @@ export default function IndustryMsicPage() {
   }
 
   function clearMsic() {
-    // Clear MSIC selection (code + canonical title)
+    setMsicSource("auto");
+    setItemSearchMessage(null);
     setValue("msicCode", "", { shouldDirty: true });
     setValue("msicTitle", "", { shouldDirty: true });
-    setSelectedMsic(null); // Reset UI
+    setSelectedMsic(null);
   }
 
   async function save() {
@@ -431,117 +414,14 @@ export default function IndustryMsicPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-6">
-        {/* Item Search Section (Optional) */}
-        <SectionCard title={t(language, "setupIndustry.itemSearch.title")} required={false}>
-          <div className="space-y-3" data-item-search-container>
-            <p className="text-xs text-[var(--text-secondary)]">
-              {t(language, "setupIndustry.itemSearch.hint")}
-            </p>
-            <div className="relative">
-              <Input
-                value={itemSearchQuery}
-                onChange={(e) => {
-                  setItemSearchQuery(e.target.value);
-                  if (!e.target.value.trim()) {
-                    setSelectedItemForMsic(null);
-                    setItemSearchMessage(null);
-                  }
-                }}
-                onFocus={() => {
-                  if (itemSearchResults.length > 0) {
-                    setItemSearchOpen(true);
-                  }
-                }}
-                placeholder={t(language, "setupIndustry.itemSearch.placeholder")}
-              />
-              {loadingItemSearch && (
-                <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--border)] border-t-[var(--accent)]" />
-                </div>
-              )}
-              {itemSearchOpen && itemSearchResults.length > 0 && (
-                <div className="absolute z-50 mt-1 max-h-72 w-full overflow-auto rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-lg">
-                  {itemSearchResults.map((item) => {
-                    const displayName = getItemDisplayName(item, language);
-                    const tags = Array.isArray(item.tags) ? item.tags : [];
-                    const visibleTags = tags.slice(0, 3);
-                    const extraCount = tags.length - visibleTags.length;
-
-                    return (
-                      <button
-                        key={item.id ?? item.item_key}
-                        type="button"
-                        onClick={() => handleItemSelectForMsic(item)}
-                        className="w-full px-4 py-2.5 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--surface-elevated)] transition-colors first:rounded-t-2xl last:rounded-b-2xl"
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="font-semibold break-words">{item.item_key}</span>
-                          <span className="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
-                            {item.msic_code
-                              ? item.msic_code
-                              : t(language, "setupIndustry.itemSearch.unclassifiedBadge")}
-                          </span>
-                        </div>
-                        <div className="mt-1 text-xs text-[var(--text-secondary)] break-words">
-                          {displayName}
-                        </div>
-                        {visibleTags.length > 0 && (
-                          <div className="mt-1 flex flex-wrap gap-1">
-                            {visibleTags.map((tag) => (
-                              <span
-                                key={tag}
-                                className="inline-flex items-center rounded-full bg-[var(--surface-elevated)] px-2 py-0.5 text-[10px] font-medium text-[var(--text-secondary)]"
-                              >
-                                {tag}
-                              </span>
-                            ))}
-                            {extraCount > 0 && (
-                              <span className="inline-flex items-center rounded-full bg-[var(--surface-elevated)] px-2 py-0.5 text-[10px] font-medium text-[var(--text-secondary)]">
-                                +{extraCount}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-            {itemSearchMessage && (
-              <div className={cn(
-                "rounded-xl border p-3 text-xs",
-                itemSearchMessage.type === "no_msic" && "border-[var(--danger)]/30 bg-[var(--danger)]/5",
-                itemSearchMessage.type === "not_found" && "border-[var(--border)]/30 bg-[var(--surface-elevated)]"
-              )}>
-                <p className={cn(
-                  "font-semibold",
-                  itemSearchMessage.type === "no_msic" && "text-[var(--danger)]",
-                  itemSearchMessage.type === "not_found" && "text-[var(--text-secondary)]"
-                )}>
-                  {itemSearchMessage.text}
-                </p>
-                {itemSearchMessage.type === "not_found" && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      window.location.href = "/admin/items-new";
-                    }}
-                    className="mt-2 text-[11px] font-semibold text-[var(--accent)] underline-offset-2 hover:underline"
-                  >
-                    {t(language, "setupIndustry.itemSearch.addUnclassifiedLink")}
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-        </SectionCard>
-
         <SectionCard title={t(language, "setupIndustry.sectionTitle")} required>
           <div data-field="msicCode">
             <MsicPickerSheet
               valueCode={values.msicCode}
-              onSelect={(m) => applyMsic(m)}
+              onSelect={(m) => {
+                setMsicSource("manual");
+                applyMsic(m);
+              }}
               onClear={clearMsic}
               error={errors.msicCode ? t(language, "setupIndustry.errors.msicRequired") : undefined}
             />
@@ -647,6 +527,132 @@ export default function IndustryMsicPage() {
                   </div>
             </div>
           )}
+        </SectionCard>
+
+        {/* Item Search Section (Optional) */}
+        <SectionCard title={t(language, "setupIndustry.itemSearch.title")} required={false}>
+          <div className="space-y-3" data-item-search-container>
+            <p className="text-xs text-[var(--text-secondary)]">
+              {t(language, "setupIndustry.itemSearch.hint")}
+            </p>
+            <div className="relative">
+              <Input
+                value={itemSearchQuery}
+                onChange={(e) => {
+                  setItemSearchQuery(e.target.value);
+                  if (!e.target.value.trim()) {
+                    setSelectedItemForMsic(null);
+                    setItemSearchMessage(null);
+                  }
+                }}
+                onFocus={() => {
+                  if (itemSearchResults.length > 0) {
+                    setItemSearchOpen(true);
+                  }
+                }}
+                placeholder={t(language, "setupIndustry.itemSearch.placeholder")}
+              />
+              {loadingItemSearch && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--border)] border-t-[var(--accent)]" />
+                </div>
+              )}
+              {itemSearchOpen && itemSearchResults.length > 0 && (
+                <div className="absolute z-50 mt-1 max-h-72 w-full overflow-auto rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-lg">
+                  {itemSearchResults.map((item, index) => {
+                    const displayName = getItemDisplayName(item, language);
+                    const msicLabel = item.msic_code
+                      ? item.msic_code
+                      : t(language, "setupIndustry.itemSearch.unclassifiedBadge");
+                    const tags = Array.isArray(item.tags) ? item.tags : [];
+                    const visibleTags = tags.slice(0, 3);
+                    const extraCount = tags.length - visibleTags.length;
+
+                    return (
+                      <button
+                        key={item.id ?? `row-${item.item_key}-${item.msic_code ?? "u"}-${index}`}
+                        type="button"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          handleItemSelectForMsic(item);
+                        }}
+                        className="w-full px-4 py-2.5 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--surface-elevated)] transition-colors first:rounded-t-2xl last:rounded-b-2xl"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-semibold break-words">
+                            {displayName} — {msicLabel}
+                          </span>
+                        </div>
+                        {visibleTags.length > 0 && (
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {visibleTags.map((tag) => (
+                              <span
+                                key={tag}
+                                className="inline-flex items-center rounded-full bg-[var(--surface-elevated)] px-2 py-0.5 text-[10px] font-medium text-[var(--text-secondary)]"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                            {extraCount > 0 && (
+                              <span className="inline-flex items-center rounded-full bg-[var(--surface-elevated)] px-2 py-0.5 text-[10px] font-medium text-[var(--text-secondary)]">
+                                +{extraCount}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            {/* Persistent no-match panel: only when search completed for current debounced query (no flicker while typing) */}
+            {itemSearchQuery.trim().length >= 3 &&
+              !loadingItemSearch &&
+              lastSearchedQuery === itemSearchQuery.trim() &&
+              itemSearchResults.length === 0 && (
+                <div className="rounded-xl border border-[var(--border)]/30 bg-[var(--surface-elevated)] p-3 text-xs">
+                  <p className="font-semibold text-[var(--text-secondary)]">
+                    {t(language, "setupIndustry.itemSearch.notFound")}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      window.location.href = "/admin/items-new";
+                    }}
+                    className="mt-2 text-[11px] font-semibold text-[var(--accent)] underline-offset-2 hover:underline"
+                  >
+                    {t(language, "setupIndustry.itemSearch.addUnclassifiedLink")}
+                  </button>
+                </div>
+              )}
+            {itemSearchMessage && (
+              <div className={cn(
+                "rounded-xl border p-3 text-xs",
+                itemSearchMessage.type === "no_msic" && "border-[var(--danger)]/30 bg-[var(--danger)]/5",
+                itemSearchMessage.type === "not_found" && "border-[var(--border)]/30 bg-[var(--surface-elevated)]"
+              )}>
+                <p className={cn(
+                  "font-semibold",
+                  itemSearchMessage.type === "no_msic" && "text-[var(--danger)]",
+                  itemSearchMessage.type === "not_found" && "text-[var(--text-secondary)]"
+                )}>
+                  {itemSearchMessage.text}
+                </p>
+                {itemSearchMessage.type === "not_found" && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      window.location.href = "/admin/items-new";
+                    }}
+                    className="mt-2 text-[11px] font-semibold text-[var(--accent)] underline-offset-2 hover:underline"
+                  >
+                    {t(language, "setupIndustry.itemSearch.addUnclassifiedLink")}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </SectionCard>
 
         {/* Check Invoice Section */}

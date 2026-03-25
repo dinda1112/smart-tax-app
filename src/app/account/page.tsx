@@ -51,7 +51,7 @@ export default function AccountPage() {
       return;
     }
 
-    if (trimmedNew.length < 8) {
+    if (trimmedNew.length < 6) {
       setChangePasswordError(t(language, "account.changePassword.errors.passwordTooShort"));
       return;
     }
@@ -96,9 +96,7 @@ export default function AccountPage() {
 
     setResetSending(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${typeof window !== "undefined" ? window.location.origin : ""}/auth/callback?next=/reset-password`,
-      });
+      const { error } = await supabase.auth.resetPasswordForEmail(email);
 
       if (error) {
         toast.error(error.message);

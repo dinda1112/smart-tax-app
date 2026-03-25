@@ -7,7 +7,7 @@ import { loadProfile, saveProfile } from "./profile-storage";
 
 const STORAGE_KEY = "taxapp_language";
 
-const PUBLIC_AUTH_ROUTES = ["/auth/callback", "/auth/reset-password", "/reset-password", "/forgot-password"];
+const PUBLIC_AUTH_ROUTES = ["/auth/login", "/auth/signup", "/auth/callback", "/auth/reset-password", "/reset-password", "/forgot-password"];
 
 // Only allow "en" and "ms" for now
 type WorkingLanguage = "en" | "ms";

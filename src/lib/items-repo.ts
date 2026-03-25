@@ -197,7 +197,7 @@ function getMatchTier(
 export async function searchItemsByQuery(
   query: string,
   lang: LanguageCode = "en",
-  limit = 10
+  limit = 20
 ): Promise<Item[]> {
   try {
     const supabase = createClient();
@@ -238,18 +238,10 @@ export async function searchItemsByQuery(
     const ranked = mapped
       .map((item) => ({ item, tier: getMatchTier(item, queryLower, lang) }))
       .sort((a, b) => a.tier - b.tier)
-      .map((x) => x.item);
+      .map((x) => x.item)
+      .slice(0, limit);
 
-    const seen = new Set<string>();
-    const deduped: Item[] = [];
-    for (const item of ranked) {
-      if (seen.has(item.item_key)) continue;
-      seen.add(item.item_key);
-      deduped.push(item);
-      if (deduped.length >= limit) break;
-    }
-
-    return deduped;
+    return ranked;
   } catch (error) {
     console.error("Error in searchItemsByQuery:", error);
     return [];
