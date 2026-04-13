@@ -135,9 +135,9 @@ export const en = {
     notSureMessage: "No problem — you can update this later in Settings.",
   },
   setupIndustry: {
-    title: "Industry (MSIC)",
-    subtitle: "Search by MSIC code or name.",
-    sectionTitle: "Industry (MSIC)",
+    title: "Find out Industry (MSIC)",
+    subtitle: "Search  by code or name otherwise try 'others'.",
+    sectionTitle: "Find out Industry (MSIC)",
     errors: { msicRequired: "MSIC selection is required." },
     loadingIndustryDetails: "Loading industry details...",
     selectedIndustry: "Selected Industry",
@@ -184,7 +184,7 @@ export const en = {
     emailPlaceholder: "you@example.com",
     login: {
       title: "Welcome back",
-      subtitle: "Sign in to your SmartTaxApp account",
+      subtitle: "Sign in to SmartTaxEd© to find your MSIC and SST rate for free in under 60 seconds.",
       signingIn: "Signing in...",
       signIn: "Sign in",
       noAccount: "Don't have an account?",
@@ -262,7 +262,7 @@ export const en = {
     },
     signup: {
       title: "Create account",
-      subtitle: "Sign up to get started with SmartTaxApp",
+      subtitle: "Sign up to get started with SmartTaxEd©",
       passwordHint: "Must be at least 6 characters",
       confirmPasswordLabel: "Confirm Password",
       creatingAccount: "Creating account...",
@@ -341,7 +341,7 @@ export const en = {
     },
     settings: {
       title: "Settings",
-      description: "How SmartTaxApp looks and feels.",
+      description: "How SmartTaxEd© looks and feels.",
       language: "Language",
       theme: "Theme",
       fontSize: "Font Size",

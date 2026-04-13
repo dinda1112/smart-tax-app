@@ -19,7 +19,7 @@ export function TopNav() {
           </Link>
 
           <Link href="/dashboard" className="text-sm font-black tracking-tight text-[var(--text-primary)]">
-            SmartTaxApp
+            SmartTaxEd© 
           </Link>
         </div>
 

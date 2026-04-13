@@ -157,18 +157,32 @@ export default function LoginPage() {
           </div>
         </form>
 
-        {/* SIGN UP */}
-        <div className="text-center">
-          <p className="text-sm text-[var(--text-secondary)]">
-            {t(language, "auth.login.noAccount")}{" "}
-            <Link
-              href="/auth/signup"
-              className="font-semibold text-[var(--accent)] hover:underline"
-            >
-              {t(language, "auth.login.signUp")}
-            </Link>
-          </p>
-        </div>
+       {/* SIGN UP + SUPPORT */}
+<div className="text-center space-y-2">
+
+  {/* Sign up */}
+  <p className="text-sm text-[var(--text-secondary)]">
+    {t(language, "auth.login.noAccount")}{" "}
+    <Link
+      href="/auth/signup"
+      className="font-semibold text-[var(--accent)] hover:underline"
+    >
+      {t(language, "auth.login.signUp")}
+    </Link>
+  </p>
+
+  {/* Support (clickable email) */}
+  <p className="text-xs text-[var(--text-muted)]">
+    Having trouble? Reach out to us at{" "}
+    <a
+      href="mailto:tajauberseri@gmail.com"
+      className="underline hover:text-[var(--accent)]"
+    >
+      tajauberseri@gmail.com
+    </a>
+  </p>
+
+</div>
 
       </div>
     </div>
