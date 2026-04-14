@@ -105,7 +105,7 @@ export const en = {
     },
   },
   setupOptional: {
-    title: "SST Registration (Optional)",
+    title: "SST Registration details (Optional)",
     subtitle: "Helps us give more accurate results. You can skip this and still use Tax Check.",
     info: {
       whyWeAsk: {
@@ -164,15 +164,15 @@ export const en = {
     },
     invoice: {
       type: "Type",
-      sales: "Sales",
-      cost: "Cost",
+      sales: "Invoice to customer",
+      cost: "Invoice to supplier",
       item: "Item",
       itemsHint: "Items are based on your selected MSIC scope.",
       noItemsAvailable: "No items available",
       itemPlaceholder: "Search or select item...",
       checking: "Checking...",
       checkInvoice: "Check invoice",
-      checkTaxPercent: "Check tax % for invoice",
+      checkTaxPercent: "Calculate Applicable SST for Invoice",
     },
     result: {
       sstRateNotAvailable: "SST rate not available yet.",

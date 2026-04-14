@@ -16,7 +16,6 @@ type NavItem = {
 const items: NavItem[] = [
   { href: "/dashboard", labelKey: "nav.home", icon: Home },
   { href: "/account", labelKey: "nav.account", icon: UserRound },
-  { href: "/settings", labelKey: "nav.settings", icon: Settings },
 ];
 
 export function BottomNav() {
