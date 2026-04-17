@@ -36,7 +36,7 @@ export default function LoginPage() {
         return;
       }
 
-      router.push("/dashboard");
+      router.push("/setup");
       router.refresh();
     } catch (err) {
       setError(t(language, "auth.login.unexpectedError"));

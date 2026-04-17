@@ -16,12 +16,12 @@ type Props = {
     
     return (
       <div 
-        className="sticky-footer-actions sticky z-30 mt-6 border-t border-[var(--border)] backdrop-blur-md transition-colors bg-[var(--surface)]/95"
+        className="sticky-footer-actions sticky z-30 mt-6 mb-24 border-t border-[var(--border)] backdrop-blur-md bg-[var(--surface)]/95"
         data-sticky-footer-actions="1"
-        style={{ 
-          bottom: 'var(--bottom-nav-safe-spacing)',
-          paddingBottom: 'calc(0.75rem + var(--safe-area-bottom))'
-        }}
+          style={{ 
+  bottom: 'calc(4.5rem + var(--safe-area-bottom, 0px))',
+  paddingBottom: 'calc(1rem + var(--safe-area-bottom, 0px))'
+}}
       >
         <div className="mx-auto max-w-6xl px-4 pt-3">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">

@@ -19,7 +19,7 @@
   --accent: #00d084; /* Primary accent green */
   --accent-hover: #00b875;
   
-  /* Interactive elements */
+  /* Interactive elements */  
   --focus-ring: rgba(0, 208, 132, 0.3); /* Focus ring color */
   
   /* Semantic colors */
@@ -237,15 +237,15 @@ body {
 @media (max-width: 640px) {
   /* When a page already has a sticky footer, hide the BottomNav to avoid stacked bars.
      Also reduce reserved bottom spacing so content doesn't get a huge empty gap. */
-  html[data-has-sticky-footer="1"] {
-    --bottom-nav-safe-spacing: var(--bottom-ui-min-spacing);
-  }
+ html[data-has-sticky-footer="1"] {
+  --bottom-nav-safe-spacing: var(--bottom-ui-min-spacing);
+}
 
-  html[data-has-sticky-footer="1"] .bottom-nav {
-    transform: translateY(calc(100% + 24px));
-    opacity: 0;
-    pointer-events: none;
-  }
+html[data-has-sticky-footer="1"] .bottom-nav {
+  transform: translateY(calc(100% + 24px));
+  opacity: 0;
+  pointer-events: none;
+}
 }
 
 @media (max-width: 640px) {

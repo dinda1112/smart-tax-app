@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { Home, UserRound, Settings } from "lucide-react";
+import { Home, UserRound } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
 import { t } from "@/lib/ui-text/t";
 

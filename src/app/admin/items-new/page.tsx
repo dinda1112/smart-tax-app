@@ -11,9 +11,13 @@ import { CheckCircle2 } from "lucide-react";
 import { useLanguage } from "@/lib/language-context";
 import { t } from "@/lib/ui-text/t";
 
+type ItemUsage = "sell" | "buy" | "";
+
 export default function AddUnclassifiedItemPage() {
   const { language } = useLanguage();
   const [itemName, setItemName] = useState("");
+  const [itemUsage, setItemUsage] = useState<ItemUsage>("");
+  const [businessActivity, setBusinessActivity] = useState("");
   const [tagsInput, setTagsInput] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -32,16 +36,39 @@ export default function AddUnclassifiedItemPage() {
       toast.error(t(language, "admin.toastItemNameRequired"));
       return;
     }
+    if (!itemUsage) {
+      toast.error(t(language, "admin.toastUsageRequired"));
+      return;
+    }
+
     setSubmitting(true);
     setSuccess(false);
     try {
-      const tags = parseTags(tagsInput);
+      // Build tags: include usage type and business activity for admin context
+      const userTags = parseTags(tagsInput);
+      const contextTags: string[] = [];
+
+      // Add usage context as a tag
+      if (itemUsage === "sell") {
+        contextTags.push("usage:sell");
+      } else if (itemUsage === "buy") {
+        contextTags.push("usage:buy");
+      }
+
+      // Add business activity as a tag if provided
+      const trimmedActivity = businessActivity.trim();
+      if (trimmedActivity) {
+        contextTags.push(`activity:${trimmedActivity}`);
+      }
+
+      const allTags = [...contextTags, ...userTags];
+
       const res = await fetch("/api/items/create-unclassified", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: trimmedName,
-          tags,
+          tags: allTags,
           language: language,
         }),
       });
@@ -52,6 +79,8 @@ export default function AddUnclassifiedItemPage() {
       }
       setSuccess(true);
       setItemName("");
+      setItemUsage("");
+      setBusinessActivity("");
       setTagsInput("");
       toast.success(t(language, "admin.successTitle"));
     } catch (err) {
@@ -67,10 +96,10 @@ export default function AddUnclassifiedItemPage() {
       <div className="page-slide-in">
         <div className="mb-6">
           <Link
-            href="/settings"
+            href="/dashboard"
             className="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
           >
-            {t(language, "admin.backToSettings")}
+            {t(language, "admin.backToHome")}
           </Link>
           <h1 className="text-2xl font-black tracking-tight text-[var(--text-primary)]">
             {t(language, "admin.addUnclassifiedTitle")}
@@ -101,6 +130,7 @@ export default function AddUnclassifiedItemPage() {
           </Card>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Item Name */}
             <div className="space-y-2">
               <label className="block text-xs font-semibold text-[var(--text-secondary)]">
                 {t(language, "admin.itemNameLabel")} <span className="text-[var(--danger)]">*</span>
@@ -113,6 +143,60 @@ export default function AddUnclassifiedItemPage() {
                 disabled={submitting}
               />
             </div>
+
+            {/* Item Usage (Sell / Buy) */}
+            <div className="space-y-2">
+              <label className="block text-xs font-semibold text-[var(--text-secondary)]">
+                {t(language, "admin.usageLabel")} <span className="text-[var(--danger)]">*</span>
+              </label>
+              <p className="text-[11px] text-[var(--text-secondary)]">
+                {t(language, "admin.usageHint")}
+              </p>
+              <div className="inline-flex w-full overflow-hidden rounded-2xl border border-[var(--border)]/50 bg-[var(--surface-elevated)] p-1">
+                <button
+                  type="button"
+                  onClick={() => setItemUsage("sell")}
+                  disabled={submitting}
+                  className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold outline-none transition-all duration-200 ${
+                    itemUsage === "sell"
+                      ? "bg-[var(--surface)] text-[var(--text-primary)] shadow-sm"
+                      : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                  } focus-visible:ring-2 focus-visible:ring-[var(--accent)]/30`}
+                >
+                  {t(language, "admin.usageSell")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setItemUsage("buy")}
+                  disabled={submitting}
+                  className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold outline-none transition-all duration-200 ${
+                    itemUsage === "buy"
+                      ? "bg-[var(--surface)] text-[var(--text-primary)] shadow-sm"
+                      : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                  } focus-visible:ring-2 focus-visible:ring-[var(--accent)]/30`}
+                >
+                  {t(language, "admin.usageBuy")}
+                </button>
+              </div>
+            </div>
+
+            {/* Business Activity (Optional) */}
+            <div className="space-y-2">
+              <label className="block text-xs font-semibold text-[var(--text-secondary)]">
+                {t(language, "admin.activityLabel")} ({t(language, "common.optional")})
+              </label>
+              <Input
+                value={businessActivity}
+                onChange={(e) => setBusinessActivity(e.target.value)}
+                placeholder={t(language, "admin.activityPlaceholder")}
+                disabled={submitting}
+              />
+              <p className="text-[11px] text-[var(--text-secondary)]">
+                {t(language, "admin.activityHint")}
+              </p>
+            </div>
+
+            {/* Tags (Optional) */}
             <div className="space-y-2">
               <label className="block text-xs font-semibold text-[var(--text-secondary)]">
                 {t(language, "admin.tagsLabel")} ({t(language, "common.optional")})
@@ -127,6 +211,7 @@ export default function AddUnclassifiedItemPage() {
                 {t(language, "admin.tagsHint")}
               </p>
             </div>
+
             <Button type="submit" disabled={submitting} className="w-full">
               {submitting ? t(language, "admin.submitting") : t(language, "admin.submit")}
             </Button>

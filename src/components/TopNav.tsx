@@ -45,7 +45,7 @@ export function TopNav() {
 
           {/* USER GUIDE */}
           <Link
-            href="https://userguide.tajauberseri.com"
+            href="https://userguidesmarttaxed.tajauberseri.com/"
             target="_blank"
             className="text-xs font-semibold text-[var(--accent)] hover:underline"
           >
@@ -79,7 +79,7 @@ export function TopNav() {
                     language === "ms" ? "font-bold text-[var(--accent)]" : ""
                   }`}
                 >
-                  Bahasa
+                  Malay
                 </button>
               </div>
             )}

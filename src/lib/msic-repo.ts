@@ -103,6 +103,9 @@ export async function getMsicByCode(code: string): Promise<MsicClass | null> {
     .single();
 
   if (error) {
+    if (error.code === "PGRST116") {
+      return null;
+    }
     console.error("Error fetching MSIC code:", error);
     return null;
   }

@@ -52,6 +52,21 @@ export const ms = {
     searching: "Mencari...",
     noResults: "Tiada hasil. Cuba kata kunci lain.",
     noResultsLong: "Tiada hasil. Taip lebih banyak aksara atau cuba kata kunci lain.",
+    others: {
+      buttonLabel: "Lain-lain — Masukkan secara manual",
+      buttonHint: "Taipkan kod MSIC dan keterangan perniagaan anda.",
+      linkLabel: "Tak jumpa? Masukkan secara manual",
+      title: "Masukkan MSIC secara manual",
+      subtitle: "Taipkan kod industri dan keterangan ringkas.",
+      codeLabel: "Kod MSIC",
+      codePlaceholder: "cth. 47190",
+      descriptionLabel: "Keterangan perniagaan",
+      descriptionPlaceholder: "cth. Jualan runcit barangan lain",
+      errorCodeRequired: "Kod MSIC diperlukan.",
+      errorDescriptionRequired: "Keterangan perniagaan diperlukan.",
+      toastSaved: "Disimpan — menunggu pengesahan.",
+      pendingVerification: "Menunggu pengesahan",
+    },
   },
   toast: {
     saved: "Disimpan",
@@ -151,8 +166,13 @@ export const ms = {
       group: "Kumpulan",
       class: "Kelas",
     },
+
+    itemSst: {
+  resultLabel: "Kadar SST yang berkenaan",
+},
+
     itemSearch: {
-      title: "Barang (pilihan)",
+      title: "Barang",
       hint: "Taip nama barang (cth. 'papan kekunci') untuk cari MSIC secara automatik.",
       placeholder: "cth. papan kekunci, pencetak, dll.",
       noMsic: "Barang ini belum ada MSIC. Sila pilih industri secara manual atau naik satu tahap.",
@@ -285,7 +305,7 @@ export const ms = {
   },
   admin: {
     addUnclassifiedTitle: "Tambah Barang (Tanpa Klasifikasi)",
-    addUnclassifiedSubtitle: "Tambah barang baharu tanpa MSIC untuk pasukan kami kemas kini untuk kemas kini masa hadapan.",
+    addUnclassifiedSubtitle: "Taipkan barang yang anda jual atau beli (cth. 'kaca') untuk cari MSIC secara automatik.",
     itemNameLabel: "Nama barang",
     itemNamePlaceholder: "cth. Stick gam",
     tagsLabel: "Tag",
@@ -297,7 +317,15 @@ export const ms = {
     successThankYou: "Terima kasih! Pasukan kami akan semak.",
     addAnother: "Tambah lagi",
     toastItemNameRequired: "Nama barang diperlukan.",
-    backToSettings: "← Kembali ke Tetapan",
+    backToHome: "← Kembali ke Utama",
+    usageLabel: "Apa yang anda buat dengan barang ini?",
+    usageHint: "Ini membantu kami menetapkan kod industri yang betul.",
+    usageSell: "Saya jual",
+    usageBuy: "Saya beli / guna",
+    activityLabel: "Aktiviti perniagaan",
+    activityPlaceholder: "cth. Pembuatan botol kaca, Jualan runcit produk kaca",
+    activityHint: "Jelaskan secara ringkas apa perniagaan anda buat dengan barang ini.",
+    toastUsageRequired: "Sila pilih sama ada anda jual atau beli barang ini.",
   },
   account: {
     title: "Akaun",

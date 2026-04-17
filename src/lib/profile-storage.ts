@@ -48,9 +48,8 @@ export async function loadProfile(): Promise<{ data: ProfileFormData | null; sav
     sstNumber: row.sst_number || "",
     sstEffectiveDate: row.sst_effective_date || "",
     msicCode: row.msic_code || "",
-
-    // Not stored in profiles → derived from msic_codes when needed
-    msicTitle: "",
+    msicTitle: row.msic_title || "",
+    
     msicSection: "",
     msicDivision: "",
     msicGroup: "",

@@ -18,6 +18,7 @@ export type ProfileRow = {
   sst_effective_date?: string | null;
 
   msic_code?: string | null;
+  msic_title?: string | null;
 
   updated_at?: string | null;
 };
