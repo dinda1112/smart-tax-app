@@ -111,12 +111,15 @@ export const ms = {
     namePlaceholder: "Nama anda",
     companyNameLabel: "Nama syarikat",
     companyNamePlaceholder: "cth. Acme Sdn Bhd",
-    companySizeLabel: "Saiz syarikat tahun lepas",
+    companySizeLabel: "Saiz syarikat ",
     companySizePlaceholder: "Pilih saiz syarikat",
     companySize: {
       micro: "Mikro",
       small: "Kecil",
       medium: "Sederhana",
+      microEmployees: "> 5 pekerja",
+      smallEmployees: "5 - 75 pekerja",
+      mediumEmployees: "30 - 200 pekerja",
     },
   },
   setupOptional: {

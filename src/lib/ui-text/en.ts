@@ -105,18 +105,21 @@ export const en = {
       title: "SST status",
     },
   },
-  setupBusiness: {
+ setupBusiness: {
     title: "Profile",
     subtitle: "Enter your business information.",
     namePlaceholder: "Your name",
     companyNameLabel: "Company name",
     companyNamePlaceholder: "e.g. Acme Sdn Bhd",
-    companySizeLabel: "Company Size last year",
+    companySizeLabel: "Company Size",
     companySizePlaceholder: "Select company size",
     companySize: {
       micro: "Micro",
       small: "Small",
       medium: "Medium",
+      microEmployees: " > 5 employees",
+      smallEmployees: "5 - 75 employees",
+      mediumEmployees: "30 - 200 employees",
     },
   },
   setupOptional: {
