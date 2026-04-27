@@ -1,7 +1,7 @@
 import type { CompanySize, LanguageCode, ProfileFormData, SstStatus } from "./types";
 import { getProfile as getProfileFromRepo, saveProfile as saveProfileToRepo } from "./profile-repo";
 
-const VALID_COMPANY_SIZES: readonly CompanySize[] = ["micro", "small", "medium"];
+const VALID_COMPANY_SIZES: readonly CompanySize[] = ["micro", "small", "small_500", "medium"];
 const VALID_LANGUAGE_CODES: readonly LanguageCode[] = ["en", "ms", "iban", "zh"];
 const VALID_SST_STATUSES: readonly SstStatus[] = ["yes", "no", "not_sure"];
 

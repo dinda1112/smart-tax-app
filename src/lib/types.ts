@@ -1,6 +1,6 @@
 export type LanguageCode = "en" | "ms" | "iban" | "zh";
 
-export type CompanySize = "micro" | "small" | "medium";
+export type CompanySize = "micro" | "small" | "small_500" | "medium";
 
 export type SstStatus = "yes" | "no" | "not_sure";
 

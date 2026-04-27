@@ -4,7 +4,8 @@ import { useEffect, useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Info, CheckCircle2 } from "lucide-react";
+import { Info, CheckCircle2, Pencil } from "lucide-react";
+import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
 import { FormPageLayout } from "@/components/FormPageLayout";
 import { Input } from "@/components/ui/input";
@@ -17,9 +18,21 @@ import { loadProfile, saveProfile } from "@/lib/profile-storage";
 import { useLanguage } from "@/lib/language-context";
 import { t } from "@/lib/ui-text/t";
 
+function getSstStatusLabel(status: string, lang: string): string {
+  const l = (lang === "ms" ? "ms" : "en") as "en" | "ms";
+  const labels: Record<string, string> = {
+    yes: t(l, "common.yes"),
+    no: t(l, "common.no"),
+    not_sure: t(l, "common.notSure"),
+  };
+  return labels[status] || status;
+}
+
 export default function OptionalSettingsPage() {
   const router = useRouter();
   const { language } = useLanguage();
+  const [isEditing, setIsEditing] = useState(false);
+  const [hasSavedSst, setHasSavedSst] = useState(false);
 
   const {
     register,
@@ -49,13 +62,19 @@ export default function OptionalSettingsPage() {
         if (data) {
           reset(data);
           setInitialValues(data);
+          // If SST status has been set (not default), show view mode
+          const isFilled = data.sstStatus === "yes" || data.sstStatus === "no";
+          setHasSavedSst(isFilled);
+          setIsEditing(!isFilled);
         } else {
           setInitialValues(PROFILE_DEFAULTS);
+          setIsEditing(true);
         }
-        setSaveAttempted(false); // Reset save attempt flag when loading
+        setSaveAttempted(false);
       } catch (error) {
         console.error("Failed to load profile:", error);
         toast.error(t(language, "toast.failedToLoadProfile"));
+        setIsEditing(true);
       } finally {
         setLoading(false);
       }
@@ -80,14 +99,11 @@ export default function OptionalSettingsPage() {
   // Check if form is valid for saving
   const isFormValid = useMemo(() => {
     if (values.sstStatus === "yes") {
-      // If "yes", both number and date must be filled
       return !!(values.sstNumber?.trim() && values.sstEffectiveDate?.trim());
     }
-    // If "no" or "not_sure", form is valid (no extra fields required)
     return values.sstStatus === "no" || values.sstStatus === "not_sure";
   }, [values.sstStatus, values.sstNumber, values.sstEffectiveDate]);
 
-  // Save button should be enabled when form is valid and has changes
   const canSave = hasChanges && isFormValid && !loading && !saving;
 
   async function handleSave() {
@@ -98,11 +114,9 @@ export default function OptionalSettingsPage() {
       setSaveAttempted(true);
       const v = getValues();
 
-      // Validate SST fields if status is "yes"
       if (v.sstStatus === "yes") {
         const isValid = await trigger(["sstNumber", "sstEffectiveDate"]);
         if (!isValid) {
-          // Errors will be shown inline, no need for toast here
           setSaving(false);
           return;
         }
@@ -111,8 +125,9 @@ export default function OptionalSettingsPage() {
       await saveProfile(v);
       setInitialValues(v);
       setSaveAttempted(false);
+      setHasSavedSst(true);
+      setIsEditing(false);
       toast.success(t(language, "toast.saved"));
-      router.push("/setup");
     } catch (error) {
       console.error("Failed to save profile:", error);
       toast.error(t(language, "toast.couldNotSaveTryAgain"));
@@ -123,8 +138,7 @@ export default function OptionalSettingsPage() {
 
   function handleSstStatusChange(newStatus: SstStatus) {
     setValue("sstStatus", newStatus, { shouldDirty: true });
-    
-    // Clear SST fields and errors when switching away from "yes"
+
     if (newStatus !== "yes") {
       setValue("sstNumber", "", { shouldValidate: false });
       setValue("sstEffectiveDate", "", { shouldValidate: false });
@@ -132,12 +146,120 @@ export default function OptionalSettingsPage() {
     }
   }
 
+  if (loading) {
+    return (
+      <AppShell>
+        <div className="page-slide-in">
+          <div className="mb-4">
+            <Link
+              href="/setup"
+              className="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+            >
+              <span>←</span> {t(language, "common.back")}
+            </Link>
+            <h1 className="text-2xl font-black tracking-tight text-[var(--text-primary)]">{t(language, "setupOptional.title")}</h1>
+            <p className="mt-1 text-sm text-[var(--text-secondary)]">{t(language, "common.loading")}</p>
+          </div>
+        </div>
+      </AppShell>
+    );
+  }
+
+  // View mode — show saved SST details
+  if (!isEditing && hasSavedSst) {
+    return (
+      <AppShell>
+        <div className="page-slide-in">
+          <div className="mb-6">
+            <Link
+              href="/setup"
+              className="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+            >
+              <span>←</span> {t(language, "common.back")}
+            </Link>
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-black tracking-tight text-[var(--text-primary)]">{t(language, "setupOptional.title")}</h1>
+                <p className="mt-1 text-sm text-[var(--text-secondary)]">{t(language, "setupOptional.subtitle")}</p>
+              </div>
+              <button
+                onClick={() => setIsEditing(true)}
+                className="flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-xs font-semibold text-[var(--text-secondary)] shadow-sm transition-colors hover:bg-[var(--surface-elevated)] hover:text-[var(--text-primary)]"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                {t(language, "setup.edit")}
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {/* SST Status */}
+            <div className="border-b border-[var(--border)]/50 pb-4">
+              <div className="text-xs font-semibold text-[var(--text-secondary)] mb-1">{t(language, "setupOptional.question")}</div>
+              <div className="text-base font-extrabold text-[var(--text-primary)]">
+                {getSstStatusLabel(values.sstStatus, language)}
+              </div>
+            </div>
+
+            {/* SST Number — only if registered */}
+            {values.sstStatus === "yes" && values.sstNumber?.trim() && (
+              <div className="border-b border-[var(--border)]/50 pb-4">
+                <div className="text-xs font-semibold text-[var(--text-secondary)] mb-1">{t(language, "setupOptional.sstNumberLabel")}</div>
+                <div className="text-base font-extrabold text-[var(--text-primary)]">{values.sstNumber}</div>
+              </div>
+            )}
+
+            {/* SST Effective Date — only if registered */}
+            {values.sstStatus === "yes" && values.sstEffectiveDate?.trim() && (
+              <div className="pb-4">
+                <div className="text-xs font-semibold text-[var(--text-secondary)] mb-1">{t(language, "setupOptional.effectiveDateLabel")}</div>
+                <div className="text-base font-extrabold text-[var(--text-primary)]">{values.sstEffectiveDate}</div>
+              </div>
+            )}
+
+            {/* Status message for No / Not Sure */}
+            {values.sstStatus === "no" && (
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] p-3">
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 shrink-0 text-[var(--text-secondary)] mt-0.5" />
+                  <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+                    {t(language, "setupOptional.noMessage")}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {values.sstStatus === "not_sure" && (
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] p-3">
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 shrink-0 text-[var(--text-secondary)] mt-0.5" />
+                  <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+                    {t(language, "setupOptional.notSureMessage")}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="mt-8">
+            <Link href="/setup">
+              <Button className="w-full">
+                {t(language, "common.continueArrow")}
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </AppShell>
+    );
+  }
+
+  // Edit mode — show form
   return (
     <AppShell>
       <FormPageLayout
         backHref="/setup"
         title={t(language, "setupOptional.title")}
-        subtitle={loading ? t(language, "common.loading") : t(language, "setupOptional.subtitle")}
+        subtitle={t(language, "setupOptional.subtitle")}
         loading={loading}
         primaryAction={
           <Button
@@ -281,8 +403,3 @@ export default function OptionalSettingsPage() {
     </AppShell>
   );
 }
-
-
-
-
-

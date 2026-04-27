@@ -96,6 +96,7 @@ export const en = {
     progressOf: "of",
     progressCompleted: "completed",
     completeToUnlock: "Complete these to unlock Tax Check.",
+    edit: "Edit",
     step: {
       business: { title: "Business details", subtitle: "Name, company, size" },
       industry: { title: "Industry (MSIC)", subtitle: "Your main economic activity" },
@@ -120,6 +121,8 @@ export const en = {
       microEmployees: " > 5 employees",
       smallEmployees: "5 - 75 employees",
       mediumEmployees: "30 - 200 employees",
+      small_500: "Small (500+ employees)",
+      small_500Employees: "500 or more employees",
     },
   },
   setupOptional: {

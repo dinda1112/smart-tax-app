@@ -49,25 +49,11 @@ export default function LoginPage() {
       <div className="w-full max-w-md space-y-8">
 
         {/* LOGO + TITLE */}
-        <div className="text-center">
-
-          <div className="flex justify-center items-center gap-6 mb-6">
-            <Image
-              src="/images/tajau-logo.png"
-              alt="Tajau Logo"
-              width={110}
-              height={55}
-              priority
-            />
-
-            <Image
-              src="/images/swinburne-logo.jpg"
-              alt="Swinburne Logo"
-              width={110}
-              height={55}
-              priority
-            />
-          </div>
+<div className="text-center">
+  <div className="flex justify-center items-center gap-6 mb-6">
+    <Image src="/images/swinburne-logo.jpg" alt="Swinburne Logo" width={75} height={38} priority />
+    <Image src="/images/tajau-logo.png" alt="Tajau Logo" width={110} height={55} priority />
+  </div>
 
           <h1 className="text-3xl font-black tracking-tight text-[var(--text-primary)]">
             {t(language, "auth.login.title")}
@@ -175,10 +161,10 @@ export default function LoginPage() {
   <p className="text-xs text-[var(--text-muted)]">
     Having trouble? Reach out to us at{" "}
     <a
-      href="mailto:tajauberseri@gmail.com"
+      href="mailto:info@tajauberseri.com"
       className="underline hover:text-[var(--accent)]"
     >
-      tajauberseri@gmail.com
+      info@tajauberseri.com
     </a>
   </p>
 

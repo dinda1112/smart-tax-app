@@ -96,6 +96,7 @@ export const ms = {
     progressOf: "daripada",
     progressCompleted: "lengkap",
     completeToUnlock: "Lengkapkan ini untuk buka Kiraan Cukai.",
+    edit: "Sunting",
     step: {
       business: { title: "Maklumat perniagaan", subtitle: "Nama, syarikat, saiz" },
       industry: { title: "Industri (MSIC)", subtitle: "Aktiviti ekonomi utama anda" },
@@ -120,6 +121,8 @@ export const ms = {
       microEmployees: "> 5 pekerja",
       smallEmployees: "5 - 75 pekerja",
       mediumEmployees: "30 - 200 pekerja",
+      small_500: "Kecil (500+ pekerja)",
+      small_500Employees: "500 atau lebih pekerja",
     },
   },
   setupOptional: {
